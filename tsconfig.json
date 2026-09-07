@@ -1,7 +1,6 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "baseUrl": "./packages/cli/**",
     "jsx": "react-jsx",
     "jsxImportSource": "@opentui/react"
   }
