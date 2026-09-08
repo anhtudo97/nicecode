@@ -4,11 +4,10 @@ import react from "eslint-plugin-react"
 import reactHooks from "eslint-plugin-react-hooks"
 import prettierConfig from "eslint-config-prettier"
 import globals from "globals"
+import { defineConfig, globalIgnores } from "eslint/config"
 
-export default tseslint.config(
-  {
-    ignores: ["**/node_modules/**", "**/dist/**", "**/build/**", "**/out/**", "bun.lock"]
-  },
+export default defineConfig(
+  globalIgnores(["**/node_modules/**", "**/dist/**", "**/build/**", "**/out/**", "bun.lock"]),
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
