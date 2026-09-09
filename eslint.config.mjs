@@ -7,30 +7,30 @@ import globals from "globals"
 import { defineConfig, globalIgnores } from "eslint/config"
 
 export default defineConfig(
-  globalIgnores(["**/node_modules/**", "**/dist/**", "**/build/**", "**/out/**", "bun.lock"]),
-  js.configs.recommended,
-  ...tseslint.configs.recommended,
-  {
-    files: ["**/*.{ts,tsx,js,jsx}"],
-    languageOptions: {
-      globals: { ...globals.node, ...globals.browser }
+    globalIgnores(["**/node_modules/**", "**/dist/**", "**/build/**", "**/out/**", "bun.lock"]),
+    js.configs.recommended,
+    ...tseslint.configs.recommended,
+    {
+        files: ["**/*.{ts,tsx,js,jsx}"],
+        languageOptions: {
+            globals: { ...globals.node, ...globals.browser }
+        },
+        plugins: {
+            react,
+            "react-hooks": reactHooks
+        },
+        settings: {
+            react: { version: "detect" }
+        },
+        rules: {
+            ...react.configs.recommended.rules,
+            ...react.configs["jsx-runtime"].rules,
+            ...reactHooks.configs.recommended.rules,
+            "@typescript-eslint/no-unused-vars": [
+                "warn",
+                { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }
+            ]
+        }
     },
-    plugins: {
-      react,
-      "react-hooks": reactHooks
-    },
-    settings: {
-      react: { version: "detect" }
-    },
-    rules: {
-      ...react.configs.recommended.rules,
-      ...react.configs["jsx-runtime"].rules,
-      ...reactHooks.configs.recommended.rules,
-      "@typescript-eslint/no-unused-vars": [
-        "warn",
-        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }
-      ]
-    }
-  },
-  prettierConfig
+    prettierConfig
 )

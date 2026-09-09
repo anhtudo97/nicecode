@@ -1,10 +1,10 @@
 import { createElement } from "@opentui/react"
 import type {
-  AsciiFontProps,
-  BoxProps,
-  ScrollBoxProps,
-  TextProps,
-  TextareaProps
+    AsciiFontProps,
+    BoxProps,
+    ScrollBoxProps,
+    TextProps,
+    TextareaProps
 } from "@opentui/react"
 
 // OpenTUI intrinsics (<box>, <text>, ...) are lowercase, so eslint-plugin-react lints
