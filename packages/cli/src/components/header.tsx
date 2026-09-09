@@ -1,10 +1,12 @@
+import { AsciiFont, Box } from "./ui/primitives"
+
 export function Header() {
   return (
-    <box alignItems="center" justifyContent="center">
-      <box flexDirection="row" justifyContent="center" gap={0.5} alignItems="center">
-        <ascii-font font="tiny" text="Nice" color="gray" />
-        <ascii-font font="tiny" text="Code" />
-      </box>
-    </box>
+    <Box alignItems="center" justifyContent="center">
+      <Box flexDirection="row" justifyContent="center" gap={0.5} alignItems="center">
+        <AsciiFont font="tiny" text="Nice" color="gray" />
+        <AsciiFont font="tiny" text="Code" />
+      </Box>
+    </Box>
   )
 }

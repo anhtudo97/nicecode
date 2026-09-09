@@ -1,13 +1,14 @@
 import { TextAttributes } from "@opentui/core"
+import { Box, Text } from "./ui/primitives"
 
 export function StatusBar() {
   return (
-    <box flexDirection="row" gap={1}>
-      <text fg="cyan">Build</text>
-      <text attributes={TextAttributes.DIM} fg="gray">
-        {"\u203a"}
-      </text>
-      <text>opus-4-6</text>
-    </box>
+    <Box flexDirection="row" gap={1}>
+      <Text fg="cyan">Build</Text>
+      <Text attributes={TextAttributes.DIM} fg="gray">
+        {"›"}
+      </Text>
+      <Text>opus-4-6</Text>
+    </Box>
   )
 }

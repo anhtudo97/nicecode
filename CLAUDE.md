@@ -37,7 +37,7 @@ Strict mode with `noUncheckedIndexedAccess`, `noImplicitOverride`, and `noFallth
 
 ## Style & commits
 
-Prettier ([.prettierrc](.prettierrc)) — **no semicolons**, double quotes, 120 col, `trailingComma: "none"`, 2-space indent. `eslint-config-prettier` is last in the ESLint chain, so formatting is Prettier's job, not ESLint's.
+Prettier ([.prettierrc](.prettierrc)) — **no semicolons**, double quotes, 100 col, `trailingComma: "none"`, 2-space indent. `eslint-config-prettier` is last in the ESLint chain, so formatting is Prettier's job, not ESLint's.
 
 Husky enforces [commitlint](commitlint.config.js) with `@commitlint/config-conventional` on `commit-msg`, so commits **must** be conventional (`feat:`, `fix:`, `chore:`, …). `.husky/pre-commit` is empty — nothing runs before commit.
 
