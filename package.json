@@ -22,6 +22,9 @@
     "scripts": {
         "prepare": "husky",
         "dev:cli": "bun run --watch packages/cli/src/index.tsx",
-        "lint": "bun run prettier --write ."
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
+        "format": "prettier --write .",
+        "format:check": "prettier --check ."
     }
 }
