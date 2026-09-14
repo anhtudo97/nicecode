@@ -7,6 +7,7 @@ import { Box, Textarea } from "./ui/primitives"
 import { useCommandMenu } from "../hooks/use-command-menu"
 import type { Command } from "./command-menu/types"
 import { CommandMenu } from "./command-menu"
+import { useToast } from "@/providers/toast"
 
 type InputBarProps = {
     onSubmit: (value: string) => void
@@ -24,6 +25,7 @@ export function InputBar({ onSubmit, disabled }: InputBarProps) {
     const textareaRef = useRef<TextareaRenderable>(null)
     const onSubmitRef = useRef<() => void>(() => {})
     const renderer = useRenderer()
+    const toast = useToast()
 
     const {
         showCommandMenu,
@@ -51,13 +53,14 @@ export function InputBar({ onSubmit, disabled }: InputBarProps) {
 
             if (command.action) {
                 command.action({
-                    exit: () => renderer.destroy()
+                    exit: () => renderer.destroy(),
+                    toast
                 })
             } else {
                 textarea.insertText(command.value + " ")
             }
         },
-        [renderer]
+        [renderer, toast]
     )
 
     const handleSubmit = useCallback(() => {

@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useRef, useState, type ReactNod
 import { DEFAULT_DURATION, type ToastOptions, type ToastVariant } from "./types"
 import { useTerminalDimensions } from "@opentui/react"
 import { Box, Text } from "@/components/ui/primitives"
+import { EmptyBorder, SplitBorder } from "@/components/border"
 
 export type ToastContextValue = {
     show: (options: ToastOptions) => void
@@ -94,7 +95,8 @@ function Toast({ currentToast }: ToastProps) {
             paddingBottom={1}
             backgroundColor="#1A1A24"
             borderColor={borderColor}
-            border={["right", "left"]}
+            {...SplitBorder}
+            border={["left"]}
         >
             <Box flexDirection="column" gap={1} width="100%">
                 <Text fg="#E1E1E1" wrapMode="word" width="100%">

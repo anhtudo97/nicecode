@@ -4,47 +4,74 @@ export const COMMANDS: Command[] = [
     {
         name: "new",
         description: "Start a new conversation",
-        value: "/new"
+        value: "/new",
+        action: (ctx) => {
+            ctx.toast.show({ message: "Starting a new conversation ...", variant: "info" })
+        }
     },
     {
         name: "agents",
         description: "Manage your agents",
-        value: "/agents"
+        value: "/agents",
+        action: (ctx) => {
+            ctx.toast.show({ message: "Managing your agents ...", variant: "info" })
+        }
     },
     {
         name: "models",
         description: "Manage your models",
-        value: "/models"
+        value: "/models",
+        action: (ctx) => {
+            ctx.toast.show({ message: "Managing your models ...", variant: "info" })
+        }
     },
     {
         name: "sessions",
         description: "Manage your sessions",
-        value: "/sessions"
+        value: "/sessions",
+        action: (ctx) => {
+            ctx.toast.show({ message: "Managing your sessions ...", variant: "info" })
+        }
     },
     {
         name: "theme",
         description: "Change the application theme",
-        value: "/theme"
+        value: "/theme",
+        action: (ctx) => {
+            ctx.toast.show({ message: "Changing the application theme ...", variant: "info" })
+        }
     },
     {
         name: "login",
         description: "Log in to the application",
-        value: "/login"
+        value: "/login",
+        action: (ctx) => {
+            ctx.toast.show({ message: "Logging in ...", variant: "info" })
+        }
     },
     {
         name: "logout",
         description: "Log out of the application",
-        value: "/logout"
+        value: "/logout",
+        action: (ctx) => {
+            ctx.toast.show({ message: "Logging out ...", variant: "info" })
+        }
     },
     {
         name: "upgrade",
         description: "Upgrade the application",
-        value: "/upgrade"
+        value: "/upgrade",
+        action: (ctx) => {
+            ctx.toast.show({ message: "Upgrading the application ...", variant: "info" })
+        }
     },
     {
         name: "usage",
         description: "Show usage information",
-        value: "/usage"
+        value: "/usage",
+        action: (ctx) => {
+            ctx.toast.show({ message: "Showing usage information ...", variant: "info" })
+        }
     },
     {
         name: "exit",
