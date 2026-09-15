@@ -1,8 +1,8 @@
 import { TextAttributes, type ScrollBoxRenderable } from "@opentui/core"
-import { COMMANDS } from "./commands"
 import type { RefObject } from "react"
-import { getFilteredCommands } from "./filter-commands"
 import { Box, Scrollbox, Text } from "../ui/primitives"
+import { COMMANDS } from "./commands"
+import { getFilteredCommands } from "./filter-commands"
 
 const MAX_VISIBLE_COMMANDS = 8
 

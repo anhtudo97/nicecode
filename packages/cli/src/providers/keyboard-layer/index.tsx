@@ -14,7 +14,7 @@ type KeyboardLayerContextValue = {
     push: (id: string, responder?: Responder) => void
     pop: (id: string) => void
     isTopLayer: (id: string) => boolean
-    setResponder: (id: string, responder?: Responder) => void
+    setResponder: (id: string, responder: Responder | null) => void
 }
 
 const KeyboardLayerContext = createContext<KeyboardLayerContextValue | null>(null)
@@ -49,7 +49,7 @@ export const KeyboardLayerProvider = ({ children }: PropsWithChildren) => {
         return stack.length === 0 || stack.at(-1) === id
     }, [])
 
-    const setResponder = useCallback((id: string, responder?: Responder) => {
+    const setResponder = useCallback((id: string, responder: Responder | null) => {
         if (responder) {
             responders.current.set(id, responder)
         } else {

@@ -8,6 +8,7 @@ import { useCommandMenu } from "../hooks/use-command-menu"
 import type { Command } from "./command-menu/types"
 import { CommandMenu } from "./command-menu"
 import { useToast } from "@/providers/toast"
+import { useKeyboardLayer } from "@/providers/keyboard-layer"
 
 type InputBarProps = {
     onSubmit: (value: string) => void
@@ -26,6 +27,7 @@ export function InputBar({ onSubmit, disabled }: InputBarProps) {
     const onSubmitRef = useRef<() => void>(() => {})
     const renderer = useRenderer()
     const toast = useToast()
+    const { isTopLayer, setResponder } = useKeyboardLayer()
 
     const {
         showCommandMenu,
@@ -42,7 +44,7 @@ export function InputBar({ onSubmit, disabled }: InputBarProps) {
         if (!textarea) return
 
         handleContentChange(textarea.plainText)
-    }, [])
+    }, [handleContentChange])
 
     const handleCommand = useCallback(
         (command: Command | undefined) => {
@@ -105,6 +107,22 @@ export function InputBar({ onSubmit, disabled }: InputBarProps) {
         }
     }, [])
 
+    // Register the base layer responder for ctrl+c
+    useEffect(() => {
+        setResponder("base", () => {
+            if (disabled) return false
+
+            const textarea = textareaRef.current
+            if (textarea && textarea.plainText.length > 0) {
+                textarea.setText("")
+                return true
+            }
+            return false
+        })
+
+        return () => setResponder("base", null)
+    }, [disabled, setResponder])
+
     return (
         <Box width="100%" alignItems="center">
             <Box {...SplitBorder} border={["left"]} borderColor="cyan">
@@ -138,7 +156,7 @@ export function InputBar({ onSubmit, disabled }: InputBarProps) {
                     )}
                     <Textarea
                         ref={textareaRef}
-                        focused={!disabled}
+                        focused={!disabled && (isTopLayer("base") || isTopLayer("command"))}
                         placeholder={`Ask a question... "Fix a bug in the frontend side"`}
                         keyBindings={TEXTAREA_KEY_BINDINGS}
                         onContentChange={handleTextareaContentChange}
