@@ -46,7 +46,7 @@ export const KeyboardLayerProvider = ({ children }: PropsWithChildren) => {
     }, [])
 
     const isTopLayer = useCallback((id: string) => {
-        return stack.length === 0 || stack.at(-1) === id
+        return stackRef.current.length === 0 || stackRef.current.at(-1) === id
     }, [])
 
     const setResponder = useCallback((id: string, responder: Responder | null) => {
