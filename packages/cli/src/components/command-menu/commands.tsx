@@ -1,3 +1,4 @@
+import { Text } from "@/components/ui/primitives"
 import type { Command } from "./types"
 
 export const COMMANDS: Command[] = [
@@ -14,7 +15,10 @@ export const COMMANDS: Command[] = [
         description: "Manage your agents",
         value: "/agents",
         action: (ctx) => {
-            ctx.toast.show({ message: "Managing your agents ...", variant: "info" })
+            ctx.dialog.open({
+                title: "Manage Agents",
+                children: <Text>Manage your agents here</Text>
+            })
         }
     },
     {
@@ -22,7 +26,10 @@ export const COMMANDS: Command[] = [
         description: "Manage your models",
         value: "/models",
         action: (ctx) => {
-            ctx.toast.show({ message: "Managing your models ...", variant: "info" })
+            ctx.dialog.open({
+                title: "Manage Models",
+                children: <Text>Manage your models here</Text>
+            })
         }
     },
     {

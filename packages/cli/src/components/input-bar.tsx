@@ -1,4 +1,5 @@
 import type { KeyBinding, TextareaRenderable } from "@opentui/core"
+import { useDialog } from "@/providers/dialog"
 import { useRenderer } from "@opentui/react"
 import { useCallback, useEffect, useRef } from "react"
 import { SplitBorder } from "./border"
@@ -27,6 +28,8 @@ export function InputBar({ onSubmit, disabled }: InputBarProps) {
     const onSubmitRef = useRef<() => void>(() => {})
     const renderer = useRenderer()
     const toast = useToast()
+    const dialog = useDialog()
+
     const { isTopLayer, setResponder } = useKeyboardLayer()
 
     const {
@@ -56,13 +59,14 @@ export function InputBar({ onSubmit, disabled }: InputBarProps) {
             if (command.action) {
                 command.action({
                     exit: () => renderer.destroy(),
-                    toast
+                    toast,
+                    dialog
                 })
             } else {
                 textarea.insertText(command.value + " ")
             }
         },
-        [renderer, toast]
+        [renderer, toast, dialog]
     )
 
     const handleSubmit = useCallback(() => {
