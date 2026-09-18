@@ -6,27 +6,38 @@ import { Box } from "@/components/ui/primitives"
 import { ToastProvider } from "@/providers/toast"
 import { KeyboardLayerProvider } from "@/providers/keyboard-layer"
 import { DialogProvider } from "@/providers/dialog"
+import { ThemeProvider, useTheme } from "@/providers/theme"
+
+const ThemedRoot = () => {
+    const { colors } = useTheme()
+
+    return (
+        <Box
+            alignItems="center"
+            justifyContent="center"
+            backgroundColor={colors.background}
+            width="100%"
+            height="100%"
+            gap={2}
+        >
+            <Header />
+            <Box width="100%" maxWidth={78} paddingX={2}>
+                <InputBar onSubmit={() => {}} />
+            </Box>
+        </Box>
+    )
+}
 
 function App() {
     return (
         <KeyboardLayerProvider>
-            <DialogProvider>
-                <ToastProvider>
-                    <Box
-                        alignItems="center"
-                        justifyContent="center"
-                        backgroundColor="#0D0D12"
-                        width="100%"
-                        height="100%"
-                        gap={2}
-                    >
-                        <Header />
-                        <Box width="100%" maxWidth={78} paddingX={2}>
-                            <InputBar onSubmit={() => {}} />
-                        </Box>
-                    </Box>
-                </ToastProvider>
-            </DialogProvider>
+            <ThemeProvider>
+                <DialogProvider>
+                    <ToastProvider>
+                        <ThemedRoot />
+                    </ToastProvider>
+                </DialogProvider>
+            </ThemeProvider>
         </KeyboardLayerProvider>
     )
 }

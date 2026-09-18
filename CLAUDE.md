@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Early-stage Bun workspace monorepo for a terminal UI (TUI) app built with [OpenTUI](https://github.com/sst/opentui) + React 19. Currently one package: `packages/cli` (`@nicecode/cli`), whose entire app is [src/index.tsx](packages/cli/src/index.tsx).
 
-Note the naming drift: repo dir is `nightcode`, root package is `nicecode`, workspace package is `@nicecode/cli`. Don't "fix" one without the others.
+Note the naming drift: repo dir is `nicecode`, root package is `nicecode`, workspace package is `@nicecode/cli`. Don't "fix" one without the others.
 
 ## Runtime & commands
 
