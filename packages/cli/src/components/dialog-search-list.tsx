@@ -2,7 +2,7 @@ import { Box, Input, Scrollbox, Text } from "@/components/ui/primitives"
 import { useKeyboardLayer } from "@/providers/keyboard-layer"
 import { TextAttributes, type InputRenderable, type ScrollBoxRenderable } from "@opentui/core"
 import { useKeyboard } from "@opentui/react"
-import { useCallback, useMemo, useRef, useState, type ReactNode } from "react"
+import { useCallback, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react"
 
 const MAX_VISIBLE_ITEMS = 6
 
@@ -38,11 +38,6 @@ export const DialogSearchList = <T,>({
         const text = inputRef.current?.value ?? ""
         setSearchValue(text)
         setSelectedIndex(0)
-
-        const scrollbox = scrollRef.current
-        if (scrollbox) {
-            scrollbox.scrollTo(0)
-        }
     }, [])
 
     const filtered = useMemo(() => {
@@ -54,6 +49,23 @@ export const DialogSearchList = <T,>({
 
     const visibleHeight = Math.min(filtered.length, MAX_VISIBLE_ITEMS)
 
+    // Follow the selected row in the same commit as the highlight move, instead of
+    // calling scrollTo() imperatively before selectedIndex is even set (which could
+    // paint the scroll shift a step ahead of the highlight and read as jank)
+    useLayoutEffect(() => {
+        const sb = scrollRef.current
+        if (!sb) return
+        if (selectedIndex < sb.scrollTop) {
+            sb.scrollTo(selectedIndex)
+            return
+        }
+        const viewportHeight = sb.viewport.height
+        const visibleEnd = sb.scrollTop + viewportHeight - 1
+        if (selectedIndex > visibleEnd) {
+            sb.scrollTo(selectedIndex - viewportHeight + 1)
+        }
+    }, [selectedIndex])
+
     useKeyboard((key) => {
         if (!isTopLayer("dialog")) return
 
@@ -63,35 +75,19 @@ export const DialogSearchList = <T,>({
                 onSelect(selectedItem)
             }
         } else if (key.name === "up") {
-            setSelectedIndex((prev) => {
-                const nextIndex = Math.max(prev - 1, 0)
-                const sb = scrollRef.current
-                if (sb && nextIndex < sb.scrollTop) {
-                    sb.scrollTo(nextIndex)
-                }
-                const item = filtered[nextIndex]
-                if (item && onHighlight) {
-                    onHighlight(item)
-                }
-                return nextIndex
-            })
+            const nextIndex = Math.max(selectedIndex - 1, 0)
+            setSelectedIndex(nextIndex)
+            const item = filtered[nextIndex]
+            if (item && onHighlight) {
+                onHighlight(item)
+            }
         } else if (key.name === "down") {
-            setSelectedIndex((prev) => {
-                const nextIndex = Math.min(prev + 1, filtered.length - 1)
-                const sb = scrollRef.current
-                if (sb) {
-                    const viewportHeight = sb.viewport.height
-                    const visibleEnd = sb.scrollTop + viewportHeight - 1
-                    if (nextIndex > visibleEnd) {
-                        sb.scrollTo(nextIndex - viewportHeight + 1)
-                    }
-                }
-                const item = filtered[nextIndex]
-                if (item && onHighlight) {
-                    onHighlight(item)
-                }
-                return nextIndex
-            })
+            const nextIndex = Math.min(selectedIndex + 1, filtered.length - 1)
+            setSelectedIndex(nextIndex)
+            const item = filtered[nextIndex]
+            if (item && onHighlight) {
+                onHighlight(item)
+            }
         }
     })
 

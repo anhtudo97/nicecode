@@ -88,7 +88,7 @@ export function useCommandMenu(): UseCommandMenuReturn {
                 const newIndex = Math.min(prevIndex + 1, filteredCommands.length - 1)
                 const sb = scrollRef.current
                 if (sb) {
-                    const viewportHeight = sb.scrollTop + sb.height
+                    const viewportHeight = sb.viewport.height
                     const visibleEnd = sb.scrollTop + viewportHeight - 1
 
                     if (newIndex > visibleEnd) {

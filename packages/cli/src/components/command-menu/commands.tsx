@@ -1,4 +1,5 @@
 import { Text } from "@/components/ui/primitives"
+import { ThemeDialogContent } from "@/dialogs"
 import type { Command } from "./types"
 
 export const COMMANDS: Command[] = [
@@ -45,7 +46,10 @@ export const COMMANDS: Command[] = [
         description: "Change the application theme",
         value: "/theme",
         action: (ctx) => {
-            ctx.toast.show({ message: "Changing the application theme ...", variant: "info" })
+            ctx.dialog.open({
+                title: "Change Theme",
+                children: <ThemeDialogContent />
+            })
         }
     },
     {

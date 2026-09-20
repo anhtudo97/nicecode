@@ -39,8 +39,9 @@ const persistTheme = (theme: Theme): void => {
 
 type ThemeContextValue = {
     colors: ThemeColors
-    theme: Theme
+    currentTheme: Theme
     setTheme: (theme: Theme) => void
+    previewTheme: (theme: Theme) => void
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null)
@@ -60,6 +61,11 @@ type ThemeProviderProps = {
 export const ThemeProvider = ({ children }: ThemeProviderProps) => {
     const [currentTheme, setCurrentTheme] = useState<Theme>(getInitialTheme)
 
+    // Live preview while navigating: apply colors instantly, skip the blocking disk write
+    const previewTheme = useCallback((newTheme: Theme) => {
+        setCurrentTheme(newTheme)
+    }, [])
+
     const setTheme = useCallback((newTheme: Theme) => {
         setCurrentTheme(newTheme)
         persistTheme(newTheme)
@@ -68,10 +74,11 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
     const value: ThemeContextValue = useMemo(
         () => ({
             colors: currentTheme.colors,
-            theme: currentTheme,
-            setTheme
+            currentTheme,
+            setTheme,
+            previewTheme
         }),
-        [currentTheme, setTheme]
+        [currentTheme, setTheme, previewTheme]
     )
 
     return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
