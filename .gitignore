@@ -29,8 +29,6 @@ coverage/
 .nyc_output/
 
 # Editor / OS
-.vscode/*
-!.vscode/extensions.json
 .idea/
 .DS_Store
 Thumbs.db

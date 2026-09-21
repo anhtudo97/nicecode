@@ -3,6 +3,7 @@ import type { Command } from "../components/command-menu/types"
 import { useMemo, useRef, useState, type RefObject } from "react"
 import { getFilteredCommands } from "../components/command-menu/filter-commands"
 import { useKeyboard } from "@opentui/react"
+import { useKeyboardLayer } from "@/providers/keyboard-layer"
 
 type UseCommandMenuReturn = {
     showCommandMenu: boolean
@@ -19,12 +20,18 @@ export function useCommandMenu(): UseCommandMenuReturn {
     const [showCommandMenu, setShowCommandMenu] = useState(false)
     const [selectedIndex, setSelectedIndex] = useState(0)
     const scrollRef = useRef<ScrollBoxRenderable | null>(null)
+    const { isTopLayer, push, pop } = useKeyboardLayer()
 
     const commandQuery = showCommandMenu && textValue.startsWith("/") ? textValue.slice(1) : ""
 
     const filteredCommands = useMemo(() => {
         return getFilteredCommands(commandQuery)
     }, [commandQuery])
+
+    const close = () => {
+        setShowCommandMenu(false)
+        pop("command")
+    }
 
     const handleContentChange = (content: string) => {
         setTextValue(content)
@@ -37,23 +44,31 @@ export function useCommandMenu(): UseCommandMenuReturn {
 
         const prefix = content.startsWith("/") ? content.slice(1) : null
 
-        setShowCommandMenu(prefix !== null && !prefix.includes(" "))
+        if (prefix !== null && !prefix.includes(" ")) {
+            setShowCommandMenu(true)
+            push("command", () => {
+                close()
+                return true
+            })
+        } else {
+            close()
+        }
     }
 
     const resolveCommand = (index: number): Command | undefined => {
         const command = filteredCommands[index]
         if (command) {
-            setShowCommandMenu(false)
+            close()
         }
         return command
     }
 
     useKeyboard((key) => {
-        if (!showCommandMenu) return
+        if (!showCommandMenu || !isTopLayer("command")) return
 
         if (key.name === "escape") {
             key.preventDefault()
-            setShowCommandMenu(false)
+            close()
         } else if (key.name === "up") {
             key.preventDefault()
             setSelectedIndex((prevIndex) => {
@@ -73,7 +88,7 @@ export function useCommandMenu(): UseCommandMenuReturn {
                 const newIndex = Math.min(prevIndex + 1, filteredCommands.length - 1)
                 const sb = scrollRef.current
                 if (sb) {
-                    const viewportHeight = sb.scrollTop + sb.height
+                    const viewportHeight = sb.viewport.height
                     const visibleEnd = sb.scrollTop + viewportHeight - 1
 
                     if (newIndex > visibleEnd) {

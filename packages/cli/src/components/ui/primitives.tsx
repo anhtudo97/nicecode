@@ -2,6 +2,7 @@ import { createElement } from "@opentui/react"
 import type {
     AsciiFontProps,
     BoxProps,
+    InputProps,
     ScrollBoxProps,
     TextProps,
     TextareaProps
@@ -15,5 +16,6 @@ import type {
 export const Box = (props: BoxProps) => createElement("box", props)
 export const Text = (props: TextProps) => createElement("text", props)
 export const Textarea = (props: TextareaProps) => createElement("textarea", props)
+export const Input = (props: InputProps) => createElement("input", props)
 export const AsciiFont = (props: AsciiFontProps) => createElement("ascii-font", props)
 export const Scrollbox = (props: ScrollBoxProps) => createElement("scrollbox", props)
