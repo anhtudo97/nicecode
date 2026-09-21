@@ -4,9 +4,27 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Early-stage Bun workspace monorepo for a terminal UI (TUI) app built with [OpenTUI](https://github.com/sst/opentui) + React 19. Currently one package: `packages/cli` (`@nicecode/cli`), whose entire app is [src/index.tsx](packages/cli/src/index.tsx).
+Early-stage Bun workspace monorepo for a terminal UI (TUI) app built with [OpenTUI](https://github.com/sst/opentui) + React 19. Currently one package: `packages/cli` (`@nicecode/cli`), entry point [src/index.tsx](packages/cli/src/index.tsx).
 
 Note the naming drift: repo dir is `nicecode`, root package is `nicecode`, workspace package is `@nicecode/cli`. Don't "fix" one without the others.
+
+## Path alias
+
+`@/*` maps to `packages/cli/src/*` (declared in the root [tsconfig.json](tsconfig.json), not `tsconfig.base.json`). Always import via `@/...`, not relative paths across dirs.
+
+## App architecture
+
+`src/index.tsx` nests providers around a themed root: `KeyboardLayerProvider > ThemeProvider > DialogProvider > ToastProvider`. Order matters — `DialogProvider`/`ToastProvider` read `useTheme`, and `DialogProvider` reads `useKeyboardLayer`.
+
+- `providers/keyboard-layer` — a layer stack (`push`/`pop`/`isTopLayer`) so ctrl+c and other global keys route to the topmost UI layer (dialog, command menu, etc.) instead of always quitting. Layers register an optional `Responder` that can intercept ctrl+c and return `true` to stop it propagating.
+- `providers/theme` — `THEMES`/`DEFAULT_THEME`/`ThemeColors` live in [theme.ts](packages/cli/src/theme.ts). Preference persists to `~/.nicecode/preferences.json` (`setTheme` persists, `previewTheme` doesn't — used for live preview while navigating the theme dialog).
+- `providers/dialog` — generic modal host (`useDialog().open({ title, children })`); renders full-screen overlay, closes on escape or backdrop click, registers itself as a keyboard layer.
+- `providers/toast` — toast notifications, types in `providers/toast/types.ts`.
+- `dialogs/` — concrete dialog contents (e.g. `theme-dialog.tsx`) that get passed into `useDialog().open(...)`.
+- `components/command-menu/` — slash-command-style menu (commands, filtering, types split into separate files).
+- `components/ui/primitives.tsx` — shared `Box`/`Text` wrappers over OpenTUI primitives; prefer these over raw `<box>`/`<text>` for consistent styling.
+
+When adding a new provider, follow the existing pattern: `createContext` + a `use*` hook that throws if used outside its provider.
 
 ## Runtime & commands
 
