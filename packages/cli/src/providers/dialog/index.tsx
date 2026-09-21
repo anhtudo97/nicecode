@@ -3,6 +3,7 @@ import type { DialogConfig } from "@/providers/dialog/types"
 import { useKeyboardLayer } from "@/providers/keyboard-layer"
 import { RGBA, TextAttributes } from "@opentui/core"
 import { useKeyboard, useTerminalDimensions } from "@opentui/react"
+import { useTheme } from "@/providers/theme"
 import { createContext, useCallback, useContext, useMemo, useState } from "react"
 
 export type DialogContextValue = {
@@ -60,6 +61,7 @@ type DialogProps = {
 }
 
 const Dialog = ({ currentDialog, close }: DialogProps) => {
+    const { colors } = useTheme()
     const { isTopLayer } = useKeyboardLayer()
     const dimensions = useTerminalDimensions()
 
@@ -90,7 +92,7 @@ const Dialog = ({ currentDialog, close }: DialogProps) => {
             <Box
                 width={Math.min(dimensions.width - 4, 60)}
                 height="auto"
-                backgroundColor="#1A1A24"
+                backgroundColor={colors.dialogSurface}
                 paddingX={4}
                 paddingY={1}
                 flexDirection="column"

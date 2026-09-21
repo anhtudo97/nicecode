@@ -1,4 +1,5 @@
 import type { KeyBinding, TextareaRenderable } from "@opentui/core"
+import { useTheme } from "@/providers/theme"
 import { useDialog } from "@/providers/dialog"
 import { useRenderer } from "@opentui/react"
 import { useCallback, useEffect, useRef } from "react"
@@ -29,6 +30,7 @@ export function InputBar({ onSubmit, disabled }: InputBarProps) {
     const renderer = useRenderer()
     const toast = useToast()
     const dialog = useDialog()
+    const { colors } = useTheme()
 
     const { isTopLayer, setResponder } = useKeyboardLayer()
 
@@ -129,13 +131,13 @@ export function InputBar({ onSubmit, disabled }: InputBarProps) {
 
     return (
         <Box width="100%" alignItems="center">
-            <Box {...SplitBorder} border={["left"]} borderColor="cyan">
+            <Box {...SplitBorder} border={["left"]} borderColor={colors.primary}>
                 <Box
                     position="relative"
                     justifyContent="center"
                     paddingX={2}
                     paddingY={1}
-                    backgroundColor="#1A1A24"
+                    backgroundColor={colors.surface}
                     width="100%"
                     minWidth={78}
                     gap={1}
@@ -146,7 +148,7 @@ export function InputBar({ onSubmit, disabled }: InputBarProps) {
                             bottom="100%"
                             left={0}
                             width="100%"
-                            backgroundColor="#1A1A24"
+                            backgroundColor={colors.surface}
                             zIndex={10}
                         >
                             <CommandMenu

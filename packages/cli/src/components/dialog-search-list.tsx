@@ -1,5 +1,6 @@
 import { Box, Input, Scrollbox, Text } from "@/components/ui/primitives"
 import { useKeyboardLayer } from "@/providers/keyboard-layer"
+import { useTheme } from "@/providers/theme"
 import { TextAttributes, type InputRenderable, type ScrollBoxRenderable } from "@opentui/core"
 import { useKeyboard } from "@opentui/react"
 import { useCallback, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react"
@@ -32,7 +33,7 @@ export const DialogSearchList = <T,>({
     const inputRef = useRef<InputRenderable>(null)
     const scrollRef = useRef<ScrollBoxRenderable>(null)
     const { isTopLayer } = useKeyboardLayer()
-    // const { colors } = useTheme()
+    const { colors } = useTheme()
 
     const handleContentChange = useCallback(() => {
         const text = inputRef.current?.value ?? ""
@@ -111,7 +112,7 @@ export const DialogSearchList = <T,>({
                                 flexDirection="row"
                                 height={1}
                                 overflow="hidden"
-                                backgroundColor={isSeclected ? "#89B4FA" : undefined}
+                                backgroundColor={isSeclected ? colors.selection : undefined}
                                 onMouseMove={() => {
                                     setSelectedIndex(index)
                                     if (onHighlight) {
