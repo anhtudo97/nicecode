@@ -1,6 +1,8 @@
 import { Box, Text } from "@/components/ui/primitives"
 import { RootLayout } from "@/layouts/root-layout"
 import { Home } from "@/screens/home"
+import { NewSession } from "@/screens/new-session"
+import { Session } from "@/screens/session"
 import { createCliRenderer } from "@opentui/core"
 import { createRoot } from "@opentui/react"
 import { createMemoryRouter, RouterProvider } from "react-router"
@@ -16,19 +18,11 @@ const router = createMemoryRouter([
             },
             {
                 path: "sessions/new",
-                element: (
-                    <Box>
-                        <Text>session/new</Text>
-                    </Box>
-                )
+                element: <NewSession />
             },
             {
                 path: "sessions/:id",
-                element: (
-                    <Box>
-                        <Text>session/:id</Text>
-                    </Box>
-                )
+                element: <Session />
             }
         ]
     }
