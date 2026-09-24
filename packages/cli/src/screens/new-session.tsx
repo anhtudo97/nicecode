@@ -2,6 +2,7 @@ import { useLocation, useNavigate } from "react-router"
 import { useTheme } from "@/providers/theme"
 import { useEffect } from "react"
 import { Box, Text } from "@/components/ui/primitives"
+import { ErrorMessage } from "@/components/messages"
 
 export const NewSession = () => {
     const navigate = useNavigate()
@@ -24,6 +25,7 @@ export const NewSession = () => {
         <Box flexGrow={1} padding={2} flexDirection="column" gap={1}>
             <Text>Create a new session</Text>
             <Text>{state.message}</Text>
+            <ErrorMessage message={state.message} />
         </Box>
     )
 }
