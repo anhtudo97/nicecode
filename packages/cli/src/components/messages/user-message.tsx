@@ -11,7 +11,7 @@ export const UserMessage = ({ message }: Props) => {
 
     return (
         <Box width="100%" alignItems="center">
-            <Box backgroundColor={colors.primary} width="100%" {...SplitBorder} border={["left"]}>
+            <Box {...SplitBorder} border={["left"]} borderColor={colors.primary} width="100%">
                 <Box
                     justifyContent="center"
                     paddingX={2}

@@ -1,4 +1,4 @@
-import { SplitBorder } from "@/components/border"
+import { EmptyBorder, SplitBorder } from "@/components/border"
 import { Box, Text } from "@/components/ui/primitives"
 import { useTheme } from "@/providers/theme"
 import { TextAttributes } from "@opentui/core"
@@ -12,7 +12,7 @@ export const ErrorMessage = ({ message }: Props) => {
 
     return (
         <Box width="100%" alignItems="center">
-            <Box backgroundColor={colors.error} width="100%" {...SplitBorder} border={["left"]}>
+            <Box {...SplitBorder} border={["left"]} borderColor={colors.error} width="100%">
                 <Box
                     justifyContent="center"
                     paddingX={2}

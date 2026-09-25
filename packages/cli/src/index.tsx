@@ -17,11 +17,11 @@ const router = createMemoryRouter([
                 element: <Home />
             },
             {
-                path: "sessions/new",
+                path: "session/new",
                 element: <NewSession />
             },
             {
-                path: "sessions/:id",
+                path: "session/:id",
                 element: <Session />
             }
         ]
