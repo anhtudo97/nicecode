@@ -131,7 +131,7 @@ export function InputBar({ onSubmit, disabled }: InputBarProps) {
 
     return (
         <Box width="100%" alignItems="center">
-            <Box {...SplitBorder} border={["left"]} borderColor={colors.primary}>
+            <Box {...SplitBorder} border={["left"]} borderColor={colors.primary} width="100%">
                 <Box
                     position="relative"
                     justifyContent="center"

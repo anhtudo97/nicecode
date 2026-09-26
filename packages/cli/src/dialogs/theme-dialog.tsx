@@ -25,11 +25,11 @@ export const ThemeDialogContent = () => {
 
     // Revert to the original theme if the dialog is canceled
     useEffect(() => {
-        const confirmed = confirmRef.current
         const originalTheme = originalThemeRef.current
         return () => {
             clearPendingPreview()
-            if (!confirmed) {
+            // Read the ref at unmount time; a mount-time snapshot is always false
+            if (!confirmRef.current) {
                 setTheme(originalTheme)
             }
         }
