@@ -5,7 +5,7 @@ import { TextAttributes } from "@opentui/core"
 import type { ReactNode } from "react"
 
 type Props = {
-    children: ReactNode
+    children?: ReactNode
     onSubmit: (text: string) => void
     inputDisabled?: boolean
     loading?: boolean
