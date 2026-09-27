@@ -53,3 +53,14 @@ export const SUPPORTED_CHAT_MODELS = [
         }
     }
 ] as const satisfies readonly SupportedChatModelDefinition[]
+
+export type SupportedChatModel = (typeof SUPPORTED_CHAT_MODELS)[number]
+export type SupportedChatModelId = SupportedChatModel["id"]
+
+export const findSupportedChatModelById = (
+    id: SupportedChatModelId
+): SupportedChatModel | undefined => {
+    return SUPPORTED_CHAT_MODELS.find((model) => model.id === id)
+}
+
+export const DEFAULT_CHAT_MODEL_ID: SupportedChatModelId = "claude-sonnet-4-6"
