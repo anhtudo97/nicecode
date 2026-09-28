@@ -1,7 +1,34 @@
 import { Hono } from "hono"
+import { HTTPException } from "hono/http-exception"
+import session from "./routes/session"
 
 const app = new Hono()
 
 app.get("/", (c) => c.text("Hello, world!"))
 
-export default app
+app.onError((err, c) => {
+    if (err instanceof HTTPException) {
+        return c.json(
+            {
+                error: err.message
+            },
+            err.status
+        )
+    }
+
+    console.error("Unhandled error:", err)
+
+    return c.json({
+        error: "Internal Server Error"
+    })
+})
+
+const route = app.route("/session", session)
+
+export type AppType = typeof app
+
+export default {
+    port: 3000,
+    fetch: app.fetch,
+    idleTimeout: 255
+}

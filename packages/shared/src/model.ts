@@ -57,9 +57,7 @@ export const SUPPORTED_CHAT_MODELS = [
 export type SupportedChatModel = (typeof SUPPORTED_CHAT_MODELS)[number]
 export type SupportedChatModelId = SupportedChatModel["id"]
 
-export const findSupportedChatModelById = (
-    id: SupportedChatModelId
-): SupportedChatModel | undefined => {
+export const findSupportedChatModelById = (id: string): SupportedChatModel | undefined => {
     return SUPPORTED_CHAT_MODELS.find((model) => model.id === id)
 }
 
