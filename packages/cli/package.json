@@ -8,15 +8,19 @@
         "typecheck": "tsc --noEmit"
     },
     "devDependencies": {
+        "@nicecode/server": "workspace:*",
         "@types/bun": "1.3.14",
         "typescript": "^5.9.3"
     },
     "dependencies": {
+        "@nicecode/shared": "workspace:*",
         "@opentui/core": "^0.5.10",
         "@opentui/react": "^0.5.10",
+        "hono": "^4.13.11",
         "opentui-spinner": "^0.0.7",
         "react": "^19.2.8",
-        "react-router": "^8.4.0"
+        "react-router": "^8.4.0",
+        "zod": "^4.6.5"
     },
     "engines": {
         "bun": ">=1.3.0"

@@ -23,9 +23,9 @@ app.onError((err, c) => {
     })
 })
 
-const route = app.route("/session", session)
+const routes = app.route("/session", session)
 
-export type AppType = typeof app
+export type AppType = typeof routes
 
 export default {
     port: 3000,
