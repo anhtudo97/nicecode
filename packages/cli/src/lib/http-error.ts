@@ -4,9 +4,9 @@ type ErrorResponse = {
     statusText: string
 }
 
-export const getErrorMessage = async (errorResponse: ErrorResponse): Promise<string> => {
+export async function getErrorMessage(response: ErrorResponse): Promise<string> {
     try {
-        const data = (await errorResponse.json()) as { error?: string }
+        const data = (await response.json()) as { error?: string }
         if (typeof data.error === "string" && data.error.length > 0) {
             return data.error
         }
@@ -14,5 +14,5 @@ export const getErrorMessage = async (errorResponse: ErrorResponse): Promise<str
         // Ignore JSON parsing errors
     }
 
-    return errorResponse.statusText || `HTTP error ${errorResponse.status}`
+    return response.statusText || `HTTP error ${response.status}`
 }

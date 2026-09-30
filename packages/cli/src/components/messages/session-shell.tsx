@@ -27,9 +27,11 @@ export const SessionShell = ({
             paddingX={2}
             gap={1}
         >
-            <Scrollbox flexGrow={1} width="100%" stickyScroll stickyStart="bottom">
-                <Box gap={1}>{children}</Box>
-            </Scrollbox>
+            {children ? (
+                <Scrollbox flexGrow={1} width="100%" stickyScroll stickyStart="bottom">
+                    <Box gap={1}>{children}</Box>
+                </Scrollbox>
+            ) : null}
             <Box flexShrink={0}>
                 <InputBar onSubmit={onSubmit} disabled={inputDisabled} />
             </Box>

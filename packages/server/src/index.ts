@@ -4,8 +4,6 @@ import session from "./routes/session"
 
 const app = new Hono()
 
-app.get("/", (c) => c.text("Hello, world!"))
-
 app.onError((err, c) => {
     if (err instanceof HTTPException) {
         return c.json(

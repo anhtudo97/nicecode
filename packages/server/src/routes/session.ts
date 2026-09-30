@@ -32,7 +32,7 @@ let nextId = 1
 const createSessionSchema = z.object({
     title: z.string(),
     cwd: z.string().optional(),
-    initialMessages: z
+    initialMessage: z
         .object({
             role: z.string(),
             content: z.string(),
@@ -80,20 +80,20 @@ const app = new Hono()
 
         // throw new HTTPException(500, { message: "Internal Server Error" })
 
-        const { initialMessages, ...data } = c.req.valid("json")
+        const { initialMessage, ...data } = c.req.valid("json")
 
         const id = String(nextId++)
         const now = new Date().toISOString()
 
         const messages: MockMessage[] = []
 
-        if (initialMessages) {
+        if (initialMessage) {
             messages.push({
                 id: String(nextId++),
-                role: initialMessages.role,
-                content: initialMessages.content,
-                mode: initialMessages.mode,
-                model: initialMessages.model,
+                role: initialMessage.role,
+                content: initialMessage.content,
+                mode: initialMessage.mode,
+                model: initialMessage.model,
                 status: "COMPLETED",
                 parts: null,
                 duration: null,

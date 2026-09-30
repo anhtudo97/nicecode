@@ -1,4 +1,3 @@
-import { Box, Text } from "@/components/ui/primitives"
 import { RootLayout } from "@/layouts/root-layout"
 import { Home } from "@/screens/home"
 import { NewSession } from "@/screens/new-session"
