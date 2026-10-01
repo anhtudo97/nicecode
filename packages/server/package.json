@@ -6,7 +6,8 @@
         ".": "./src/index.ts"
     },
     "scripts": {
-        "dev": "bun run --hot src/index.ts"
+        "dev": "bun run --hot src/index.ts",
+        "typecheck": "tsc --noEmit"
     },
     "dependencies": {
         "@hono/zod-validator": "^0.9.1",
