@@ -58,7 +58,9 @@
       "name": "@nicecode/server",
       "dependencies": {
         "@hono/zod-validator": "^0.9.1",
+        "@nicecode/database": "workspace:*",
         "@nicecode/shared": "workspace:*",
+        "dotenv": "^18.0.5",
         "hono": "^4.13.9",
         "zod": "^4.6.5",
       },

@@ -34,6 +34,7 @@
         "db:up": "docker compose -f docker/docker-compose.yml up -d --wait",
         "db:down": "docker compose -f docker/docker-compose.yml down",
         "db:reset": "docker compose -f docker/docker-compose.yml down -v",
-        "db:generate": "bun run --cwd packages/database db:generate"
+        "db:generate": "bun run --cwd packages/database db:generate",
+        "db:studio": "bun run --cwd packages/database db:studio"
     }
 }

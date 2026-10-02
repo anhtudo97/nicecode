@@ -38,4 +38,4 @@ Thumbs.db
 .yarn/
 .pnpm-store/
 
-/generated/prisma
+generated/
