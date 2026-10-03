@@ -1,0 +1,14 @@
+{
+    "name": "@nicecode/shared",
+    "type": "module",
+    "private": true,
+    "exports": {
+        ".": "./src/index.ts"
+    },
+    "dependencies": {
+        "zod": "^4.6.5"
+    },
+    "scripts": {
+        "typecheck": "tsc --noEmit"
+    }
+}

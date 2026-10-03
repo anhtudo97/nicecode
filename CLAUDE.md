@@ -4,13 +4,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Early-stage Bun workspace monorepo for a terminal UI (TUI) app built with [OpenTUI](https://github.com/sst/opentui) + React 19. Currently one package: `packages/cli` (`@nicecode/cli`), entry point [src/index.tsx](packages/cli/src/index.tsx).
+Early-stage Bun workspace monorepo for a terminal UI (TUI) app built with [OpenTUI](https://github.com/sst/opentui) + React 19. Packages:
+
+- `packages/cli` (`@nicecode/cli`) — the TUI, entry point [src/index.tsx](packages/cli/src/index.tsx).
+- `packages/server` (`@nicecode/server`) — Hono API; the CLI imports its route types for the typed `hono/client` ([api-client.ts](packages/cli/src/lib/api-client.ts)).
+- `packages/shared` (`@nicecode/shared`) — Zod schemas/models shared by cli and server.
+- `packages/database` (`@nicecode/database`) — Prisma 8 contract/config; `contract.prisma` and `db.ts` are generated and gitignored (`bun run db:generate`). Needs `DATABASE_URL` in `packages/database/.env`.
 
 Note the naming drift: repo dir is `nicecode`, root package is `nicecode`, workspace package is `@nicecode/cli`. Don't "fix" one without the others.
 
 ## Path alias
 
-`@/*` maps to `packages/cli/src/*` (declared in the root [tsconfig.json](tsconfig.json), not `tsconfig.base.json`). Always import via `@/...`, not relative paths across dirs.
+`@/*` maps to `packages/cli/src/*`, declared in [packages/cli/tsconfig.json](packages/cli/tsconfig.json) (only the cli package has it). Always import via `@/...`, not relative paths across dirs. Cross-package imports use workspace names (`@nicecode/shared`, ...).
 
 ## App architecture
 
@@ -33,17 +38,18 @@ Bun (>= 1.3.0) is both runtime and package manager — `bun.lock` is the lockfil
 ```bash
 bun install                 # from repo root; workspaces are hoisted here
 bun run dev:cli             # root: watch-run the TUI
-cd packages/cli && bun dev  # same thing from the package
-cd packages/cli && bun run typecheck   # tsc --noEmit
+bun run dev:server          # root: hot-run the API server
+bun run typecheck           # tsc --noEmit in every package (bun --filter)
+bun run db:generate         # prisma generate in packages/database
 ```
 
 - **No test framework is configured.** There is no test script, runner, or test file. If tests are needed, `bun test` is the natural fit — ask before adding a framework.
-- **Lint is currently broken:** `eslint.config.mjs` imports `@eslint/js`, which is not in root `devDependencies`. `bunx eslint .` fails with `ERR_MODULE_NOT_FOUND`. Fix by adding `@eslint/js` before relying on lint. There is also no `lint` script — invoke `bunx eslint .` directly.
-- `packages/cli` has **no** `tsconfig.json` of its own; `tsc` walks up and uses the root [tsconfig.json](tsconfig.json), which extends [tsconfig.base.json](tsconfig.base.json).
+- Lint: `bun run lint` / `bun run lint:fix`; format: `bun run format` / `format:check`. CI runs lint, format check and `typecheck` (all packages).
+- Each package has its own `tsconfig.json` extending [tsconfig.base.json](tsconfig.base.json); the root [tsconfig.json](tsconfig.json) is an empty shell (`files: []`). `typescript` lives in root `devDependencies`.
 
 ## OpenTUI JSX — the main gotcha
 
-This is **not** react-dom. `jsxImportSource` is `@opentui/react` (set in [tsconfig.base.json](tsconfig.base.json#L8-L9) and repeated in the root tsconfig). Intrinsic elements are OpenTUI's terminal primitives — `<box>`, `<text>`, `<textarea>`, etc. — not HTML tags. `<div>`/`<span>`/`className` do not exist; layout is flexbox props (`flexGrow`, `alignItems`, `justifyContent`) passed directly to the components.
+This is **not** react-dom. `jsxImportSource` is `@opentui/react` (set in [packages/cli/tsconfig.json](packages/cli/tsconfig.json); other packages don't use JSX). Intrinsic elements are OpenTUI's terminal primitives — `<box>`, `<text>`, `<textarea>`, etc. — not HTML tags. `<div>`/`<span>`/`className` do not exist; layout is flexbox props (`flexGrow`, `alignItems`, `justifyContent`) passed directly to the components.
 
 Entry point pattern: `createCliRenderer()` from `@opentui/core` (top-level `await`), then `createRoot(renderer).render(<App />)` from `@opentui/react`.
 

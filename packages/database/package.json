@@ -1,0 +1,26 @@
+{
+    "name": "@nicecode/database",
+    "type": "module",
+    "private": true,
+    "exports": {
+        ".": "./src/index.ts",
+        "./enums": "./src/enums.ts"
+    },
+    "scripts": {
+        "db:generate": "bunx prisma generate",
+        "db:studio": "bunx prisma studio",
+        "contract:emit": "prisma contract emit",
+        "typecheck": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@prisma/adapter-pg": "^7.10.0",
+        "@prisma/client": "7",
+        "@prisma/orm-postgres": "^8.0.0-rc.14",
+        "dotenv": "^18.0.5"
+    },
+    "devDependencies": {
+        "@prisma/cli-engine": "0.6.2",
+        "@types/node": "^26.6.3",
+        "prisma": "^7.10.0"
+    }
+}

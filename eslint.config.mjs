@@ -7,7 +7,14 @@ import globals from "globals"
 import { defineConfig, globalIgnores } from "eslint/config"
 
 export default defineConfig(
-    globalIgnores(["**/node_modules/**", "**/dist/**", "**/build/**", "**/out/**", "bun.lock"]),
+    globalIgnores([
+        "**/node_modules/**",
+        "**/dist/**",
+        "**/build/**",
+        "**/out/**",
+        "bun.lock",
+        "packages/database/src/prisma/**"
+    ]),
     js.configs.recommended,
     ...tseslint.configs.recommended,
     {

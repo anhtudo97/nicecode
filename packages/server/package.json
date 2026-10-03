@@ -1,0 +1,20 @@
+{
+    "name": "@nicecode/server",
+    "type": "module",
+    "private": true,
+    "exports": {
+        ".": "./src/index.ts"
+    },
+    "scripts": {
+        "dev": "bun run --hot src/index.ts",
+        "typecheck": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@hono/zod-validator": "^0.9.1",
+        "@nicecode/database": "workspace:*",
+        "@nicecode/shared": "workspace:*",
+        "dotenv": "^18.0.5",
+        "hono": "^4.13.9",
+        "zod": "^4.6.5"
+    }
+}

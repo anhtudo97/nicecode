@@ -19,14 +19,22 @@
         "eslint-plugin-react-hooks": "^7.1.1",
         "globals": "^17.12.0",
         "husky": "^9.1.7",
+        "typescript": "^5.9.3",
         "typescript-eslint": "^8.69.0"
     },
     "scripts": {
         "prepare": "husky",
         "dev:cli": "bun run --watch packages/cli/src/index.tsx",
+        "dev:server": "bun run --hot packages/server/src/index.ts",
         "lint": "eslint .",
         "lint:fix": "eslint . --fix",
         "format": "prettier --write .",
-        "format:check": "prettier --check ."
+        "format:check": "prettier --check .",
+        "typecheck": "bun run --filter '*' typecheck",
+        "db:up": "docker compose -f docker/docker-compose.yml up -d --wait",
+        "db:down": "docker compose -f docker/docker-compose.yml down",
+        "db:reset": "docker compose -f docker/docker-compose.yml down -v",
+        "db:generate": "bun run --cwd packages/database db:generate",
+        "db:studio": "bun run --cwd packages/database db:studio"
     }
 }
