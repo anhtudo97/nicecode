@@ -2,7 +2,15 @@ import { SplitBorder } from "@/components/border"
 import { Box, Text } from "@/components/ui/primitives"
 import { useTheme } from "@/providers/theme"
 import { useTerminalDimensions } from "@opentui/react"
-import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react"
+import {
+    createContext,
+    useCallback,
+    useContext,
+    useRef,
+    useState,
+    useMemo,
+    type ReactNode
+} from "react"
 import { DEFAULT_DURATION, type ToastOptions, type ToastVariant } from "./types"
 
 export type ToastContextValue = {
@@ -55,7 +63,7 @@ export function ToastProvider({ children }: ToastProviderProps) {
         [clearCurrentTimeout]
     )
 
-    const value: ToastContextValue = { show }
+    const value: ToastContextValue = useMemo(() => ({ show }), [show])
 
     return (
         <ToastContext.Provider value={value}>

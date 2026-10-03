@@ -9,7 +9,7 @@ Early-stage Bun workspace monorepo for a terminal UI (TUI) app built with [OpenT
 - `packages/cli` (`@nicecode/cli`) — the TUI, entry point [src/index.tsx](packages/cli/src/index.tsx).
 - `packages/server` (`@nicecode/server`) — Hono API; the CLI imports its route types for the typed `hono/client` ([api-client.ts](packages/cli/src/lib/api-client.ts)).
 - `packages/shared` (`@nicecode/shared`) — Zod schemas/models shared by cli and server.
-- `packages/database` (`@nicecode/database`) — Prisma 8 contract/config; `contract.prisma` and `db.ts` are generated and gitignored (`bun run db:generate`). Needs `DATABASE_URL` in `packages/database/.env`.
+- `packages/database` (`@nicecode/database`) — Prisma 8 contract/config; `contract.prisma` and `db.ts` are generated and gitignored (`bun run db:generate`). Needs `DATABASE_URL` in the repo-root `.env` (see `.env.example`); both [prisma.config.ts](packages/database/prisma.config.ts) and [client.ts](packages/database/src/client.ts) load it from there via `import.meta.dirname`, so cwd doesn't matter. Vars already set in the shell win over `.env` (dotenv doesn't override).
 
 Note the naming drift: repo dir is `nicecode`, root package is `nicecode`, workspace package is `@nicecode/cli`. Don't "fix" one without the others.
 
