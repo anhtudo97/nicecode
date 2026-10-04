@@ -2,6 +2,7 @@ import { zValidator } from "@hono/zod-validator"
 import { db } from "@nicecode/database/client"
 import { MessageStatus, Mode, Role } from "@nicecode/database/enums"
 import { findSupportedChatModelById } from "@nicecode/shared"
+import * as Sentry from "@sentry/hono/bun"
 import { Hono } from "hono"
 import z from "zod"
 
@@ -37,6 +38,10 @@ const app = new Hono()
             }
         })
 
+        Sentry.logger.info("Fetched sessions", {
+            count: sessions.length
+        })
+
         return c.json(sessions)
     })
     .get("/:id", async (c) => {
@@ -54,8 +59,19 @@ const app = new Hono()
             }
         })
         if (!session) {
+            Sentry.logger.warn("Session not found", {
+                sessionId: id,
+                userId: "mock-user-id"
+            })
+
             return c.json({ error: "Session not found" }, 404)
         }
+
+        Sentry.logger.info("Fetched session", {
+            sessionId: id,
+            messageCount: session.messages.length
+        })
+
         return c.json(session)
     })
     .post("/", createSessionValidator, async (c) => {
@@ -81,6 +97,11 @@ const app = new Hono()
             include: {
                 messages: true
             }
+        })
+
+        Sentry.logger.info("Created session", {
+            sessionId: session.id,
+            title: session.title
         })
 
         return c.json(session, 201)
