@@ -1,4 +1,3 @@
-import { text } from "node:stream/consumers"
 import { z } from "zod"
 
 export const toolCallArgsSchema = z.record(z.string(), z.json())
@@ -6,7 +5,7 @@ export const toolCallArgsSchema = z.record(z.string(), z.json())
 export const messagePartScheme = z.discriminatedUnion("type", [
     z.object({
         type: z.literal("reasoning"),
-        text
+        text: z.string()
     }),
     z.object({
         type: z.literal("tool-call"),
@@ -25,7 +24,7 @@ export const messagePartsSchema = z.array(messagePartScheme)
 
 export type MessagePart = z.infer<typeof messagePartScheme>
 
-export const charStreamEventSchema = z.discriminatedUnion("type", [
+export const chatStreamEventSchema = z.discriminatedUnion("type", [
     z.object({
         type: z.literal("text-delta"),
         text: z.string()
@@ -56,4 +55,4 @@ export const charStreamEventSchema = z.discriminatedUnion("type", [
     })
 ])
 
-export type CharStreamEvent = z.infer<typeof charStreamEventSchema>
+export type ChatStreamEvent = z.infer<typeof chatStreamEventSchema>

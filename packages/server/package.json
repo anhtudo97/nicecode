@@ -10,11 +10,14 @@
         "typecheck": "tsc --noEmit"
     },
     "dependencies": {
+        "@ai-sdk/anthropic": "^4.0.71",
+        "@ai-sdk/openai": "^4.0.83",
         "@hono/zod-validator": "^0.9.1",
         "@nicecode/database": "workspace:*",
         "@nicecode/shared": "workspace:*",
         "@sentry/bun": "^11.4.0",
         "@sentry/hono": "^11.4.0",
+        "ai": "^7.0.127",
         "dotenv": "^18.0.5",
         "hono": "^4.13.9",
         "zod": "^4.6.5"
