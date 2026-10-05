@@ -10,8 +10,8 @@ Tóm lược so sánh `z.union` với `z.discriminatedUnion`, và cách TypeScri
 import { z } from "zod"
 
 const Shape = z.union([
-  z.object({ kind: z.literal("circle"), radius: z.number() }),
-  z.object({ kind: z.literal("square"), side: z.number() })
+    z.object({ kind: z.literal("circle"), radius: z.number() }),
+    z.object({ kind: z.literal("square"), side: z.number() })
 ])
 
 Shape.parse({ kind: "circle", radius: 5 }) // OK, thử schema 1 trước, match
@@ -29,8 +29,8 @@ Shape.parse({ kind: "circle", radius: 5 }) // OK, thử schema 1 trước, match
 
 ```ts
 const Shape = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("circle"), radius: z.number() }),
-  z.object({ kind: z.literal("square"), side: z.number() })
+    z.object({ kind: z.literal("circle"), radius: z.number() }),
+    z.object({ kind: z.literal("square"), side: z.number() })
 ])
 
 Shape.parse({ kind: "circle", radius: 5 })
@@ -46,14 +46,14 @@ Shape.parse({ kind: "circle", radius: 5 })
 
 ## 3. So sánh trực tiếp
 
-| | `z.union` | `z.discriminatedUnion` |
-|---|---|---|
-| Cách match | Thử từng schema tuần tự | Đọc discriminator field, nhảy thẳng đến schema đúng |
-| Performance | Chậm hơn khi nhiều option | Nhanh hơn (lookup trực tiếp) |
-| Chất lượng lỗi | Lỗi gộp từ tất cả option đã thử, dài & khó đọc | Lỗi rõ ràng, chỉ rõ giá trị discriminator không hợp lệ |
-| Yêu cầu cấu trúc | Không yêu cầu gì, mọi loại schema | Phải là object, phải có field literal chung làm discriminator |
-| Phụ thuộc thứ tự | Có (match theo thứ tự khai báo) | Không |
-| Dùng khi nào | Các schema không có field chung để phân biệt (vd union giữa string và object) | Các schema đại diện cho các "case" có field phân biệt rõ ràng (vd message types, event types, API response variants) |
+|                  | `z.union`                                                                     | `z.discriminatedUnion`                                                                                               |
+| ---------------- | ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Cách match       | Thử từng schema tuần tự                                                       | Đọc discriminator field, nhảy thẳng đến schema đúng                                                                  |
+| Performance      | Chậm hơn khi nhiều option                                                     | Nhanh hơn (lookup trực tiếp)                                                                                         |
+| Chất lượng lỗi   | Lỗi gộp từ tất cả option đã thử, dài & khó đọc                                | Lỗi rõ ràng, chỉ rõ giá trị discriminator không hợp lệ                                                               |
+| Yêu cầu cấu trúc | Không yêu cầu gì, mọi loại schema                                             | Phải là object, phải có field literal chung làm discriminator                                                        |
+| Phụ thuộc thứ tự | Có (match theo thứ tự khai báo)                                               | Không                                                                                                                |
+| Dùng khi nào     | Các schema không có field chung để phân biệt (vd union giữa string và object) | Các schema đại diện cho các "case" có field phân biệt rõ ràng (vd message types, event types, API response variants) |
 
 **Quy tắc chọn:** nếu dữ liệu có một field đóng vai trò "tag" để phân loại case (giống discriminated union pattern trong TS) → luôn ưu tiên `discriminatedUnion`. Chỉ dùng `union` khi các option không share field chung, hoặc cấu trúc không đồng nhất.
 
@@ -62,17 +62,15 @@ Shape.parse({ kind: "circle", radius: 5 })
 Type narrowing là cơ chế TypeScript **thu hẹp kiểu của một biến** từ một kiểu rộng (ví dụ union `A | B | C`) xuống một kiểu cụ thể hơn, dựa trên kiểm tra runtime (if, switch, typeof, ...), để từ điểm đó compiler biết chính xác biến đang có kiểu nào.
 
 ```ts
-type Shape =
-  | { kind: "circle"; radius: number }
-  | { kind: "square"; side: number }
+type Shape = { kind: "circle"; radius: number } | { kind: "square"; side: number }
 
 function area(shape: Shape) {
-  if (shape.kind === "circle") {
-    // Tại đây TS đã narrow shape -> { kind: "circle"; radius: number }
-    return Math.PI * shape.radius ** 2
-  }
-  // Tại đây TS đã narrow shape -> { kind: "square"; side: number }
-  return shape.side ** 2
+    if (shape.kind === "circle") {
+        // Tại đây TS đã narrow shape -> { kind: "circle"; radius: number }
+        return Math.PI * shape.radius ** 2
+    }
+    // Tại đây TS đã narrow shape -> { kind: "square"; side: number }
+    return shape.side ** 2
 }
 ```
 
@@ -84,27 +82,29 @@ function area(shape: Shape) {
 - **`in`**: `"radius" in shape`.
 - **Truthiness / null check**: `if (x) { ... }`, `if (x != null) { ... }`.
 - **Custom type guard**: hàm trả về kiểu `x is T`.
-  ```ts
-  function isCircle(s: Shape): s is Extract<Shape, { kind: "circle" }> {
-    return s.kind === "circle"
-  }
-  ```
-- **Exhaustiveness check**: trong `switch` có `default`, gán biến vào kiểu `never` để compiler báo lỗi nếu quên xử lý case nào.
-  ```ts
-  function area(shape: Shape) {
-    switch (shape.kind) {
-      case "circle": return Math.PI * shape.radius ** 2
-      case "square": return shape.side ** 2
-      default: {
-        const _exhaustive: never = shape
-        throw new Error("unhandled shape")
-      }
+    ```ts
+    function isCircle(s: Shape): s is Extract<Shape, { kind: "circle" }> {
+        return s.kind === "circle"
     }
-  }
-  ```
+    ```
+- **Exhaustiveness check**: trong `switch` có `default`, gán biến vào kiểu `never` để compiler báo lỗi nếu quên xử lý case nào.
+    ```ts
+    function area(shape: Shape) {
+        switch (shape.kind) {
+            case "circle":
+                return Math.PI * shape.radius ** 2
+            case "square":
+                return shape.side ** 2
+            default: {
+                const _exhaustive: never = shape
+                throw new Error("unhandled shape")
+            }
+        }
+    }
+    ```
 
 ### Liên hệ với `union` / `discriminatedUnion` của Zod
 
-Cả `z.union` và `z.discriminatedUnion` khi dùng `z.infer<typeof Schema>` đều ra **cùng một kiểu TS union** (`{kind:"circle";...} | {kind:"square";...}`) — nên khả năng *type narrowing ở phía TypeScript* là **giống nhau** cho cả hai, không phải là lợi ích riêng của `discriminatedUnion`.
+Cả `z.union` và `z.discriminatedUnion` khi dùng `z.infer<typeof Schema>` đều ra **cùng một kiểu TS union** (`{kind:"circle";...} | {kind:"square";...}`) — nên khả năng _type narrowing ở phía TypeScript_ là **giống nhau** cho cả hai, không phải là lợi ích riêng của `discriminatedUnion`.
 
 Sự khác biệt thật sự giữa hai cách nằm ở phía **validate runtime** (performance, chất lượng lỗi, yêu cầu cấu trúc) như mục 3 — không nằm ở khả năng narrowing của TypeScript.

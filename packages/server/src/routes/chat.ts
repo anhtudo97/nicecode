@@ -133,3 +133,144 @@ const streamAIResponse = async (
 }
 
 const app = new Hono()
+    .post("/:sessionId/resume", async (c) => {
+        const sessionId = c.req.param("sessionId")
+
+        // Implement the resume logic here
+        const session = await db.session.findUnique({
+            where: {
+                id: sessionId
+            },
+            include: {
+                messages: {
+                    orderBy: {
+                        createdAt: "asc"
+                    }
+                }
+            }
+        })
+
+        if (!session) {
+            return c.json({ error: "Session not found" }, 404)
+        }
+
+        const lastMessage = session.messages.at(-1)
+        if (!lastMessage || lastMessage.role !== "USER") {
+            return c.json({ error: "No messages found in session" }, 404)
+        }
+
+        if (!isSupportedChatModel(lastMessage.model)) {
+            return c.json(
+                { error: `Session uses unsupported chat model: ${lastMessage.model}` },
+                409
+            )
+        }
+
+        const history = buildConversationHistory(session.messages)
+        const abortController = new AbortController()
+        return streamSSE(
+            c,
+            async (stream) => {
+                stream.onAbort(() => {
+                    abortController.abort()
+                })
+
+                await streamAIResponse(stream, {
+                    sessionId,
+                    model: lastMessage.model,
+                    history,
+                    mode: lastMessage.mode,
+                    abortController
+                })
+            },
+            async (error, stream) => {
+                const message = error instanceof Error ? error.message : String(error)
+
+                const errorEvent: ChatStreamEvent = {
+                    type: "error",
+                    message
+                }
+                await stream.writeSSE({
+                    event: "error",
+                    data: JSON.stringify(errorEvent)
+                })
+            }
+        )
+    })
+    .post("/:sessionId", submitValidator, async (c) => {
+        const sessionId = c.req.param("sessionId")
+
+        const session = await db.session.findUnique({
+            where: {
+                id: sessionId
+            },
+            include: {
+                messages: {
+                    orderBy: {
+                        createdAt: "asc"
+                    }
+                }
+            }
+        })
+
+        if (!session) {
+            return c.json({ error: "Session not found" }, 404)
+        }
+
+        const data = c.req.valid("json")
+
+        await db.message.create({
+            data: {
+                sessionId,
+                role: "USER",
+                status: MessageStatus.COMPLETE,
+                model: data.model,
+                content: data.content,
+                mode: data.mode
+            }
+        })
+
+        const history = buildConversationHistory([
+            ...session.messages,
+            {
+                role: "USER" as const,
+                content: data.content,
+                status: MessageStatus.COMPLETE
+            }
+        ])
+
+        const abortController = new AbortController()
+
+        return streamSSE(
+            c,
+            async (stream) => {
+                stream.onAbort(() => {
+                    abortController.abort()
+                })
+
+                await streamAIResponse(stream, {
+                    sessionId,
+                    model: data.model,
+                    history,
+                    mode: data.mode,
+                    abortController
+                })
+            },
+            async (error, stream) => {
+                if (abortController.signal.aborted) return
+
+                const message = error instanceof Error ? error.message : String(error)
+
+                const errorEvent: ChatStreamEvent = {
+                    type: "error",
+                    message
+                }
+                await stream.writeSSE({
+                    event: "error",
+                    data: JSON.stringify(errorEvent)
+                })
+            }
+        )
+    })
+
+export default app
