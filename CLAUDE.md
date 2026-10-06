@@ -7,9 +7,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Early-stage Bun workspace monorepo for a terminal UI (TUI) app built with [OpenTUI](https://github.com/sst/opentui) + React 19. Packages:
 
 - `packages/cli` (`@nicecode/cli`) — the TUI, entry point [src/index.tsx](packages/cli/src/index.tsx).
-- `packages/server` (`@nicecode/server`) — Hono API; the CLI imports its route types for the typed `hono/client` ([api-client.ts](packages/cli/src/lib/api-client.ts)).
+- `packages/server` (`@nicecode/server`) — Hono API on port 3000 (`/session` routes in [routes/session.ts](packages/server/src/routes/session.ts), validated with `@hono/zod-validator`); the CLI imports its `AppType` for the typed `hono/client` ([api-client.ts](packages/cli/src/lib/api-client.ts), base URL from `API_BASE_URL`, default `http://localhost:3000`). Errors are reported through Sentry (`@sentry/hono/bun`, wired in [index.ts](packages/server/src/index.ts) with a hardcoded DSN); `app.onError` returns `{ error }` JSON, which the CLI reads via [http-error.ts](packages/cli/src/lib/http-error.ts).
 - `packages/shared` (`@nicecode/shared`) — Zod schemas/models shared by cli and server.
-- `packages/database` (`@nicecode/database`) — Prisma 8 contract/config; `contract.prisma` and `db.ts` are generated and gitignored (`bun run db:generate`). Needs `DATABASE_URL` in the repo-root `.env` (see `.env.example`); both [prisma.config.ts](packages/database/prisma.config.ts) and [client.ts](packages/database/src/client.ts) load it from there via `import.meta.dirname`, so cwd doesn't matter. Vars already set in the shell win over `.env` (dotenv doesn't override).
+- `packages/database` (`@nicecode/database`) — Prisma 7 + PostgreSQL via `@prisma/adapter-pg`. Schema in [schema.prisma](packages/database/prisma/schema.prisma) (`Session`, `Message`, enums `Role`/`Mode`/`MessageStatus`); the client is generated into `packages/database/generated/prisma` (**committed** — rerun `bun run db:generate` after schema changes). Exports: `@nicecode/database` (client + generated types), `/client` (`db` instance), `/enums`. Needs `DATABASE_URL` in the repo-root `.env` (see `.env.example`; local Postgres via `bun run db:up`); both [prisma.config.ts](packages/database/prisma.config.ts) and [client.ts](packages/database/src/client.ts) load it from there via `import.meta.dirname`, so cwd doesn't matter. Vars already set in the shell win over `.env` (dotenv doesn't override).
 
 Note the naming drift: repo dir is `nicecode`, root package is `nicecode`, workspace package is `@nicecode/cli`. Don't "fix" one without the others.
 
@@ -19,7 +19,7 @@ Note the naming drift: repo dir is `nicecode`, root package is `nicecode`, works
 
 ## App architecture
 
-`src/index.tsx` nests providers around a themed root: `KeyboardLayerProvider > ThemeProvider > DialogProvider > ToastProvider`. Order matters — `DialogProvider`/`ToastProvider` read `useTheme`, and `DialogProvider` reads `useKeyboardLayer`.
+`src/index.tsx` creates a `createMemoryRouter` (routes: `/` Home, `/session/new` NewSession, `/session/:id` Session; screens in `screens/`) and renders it. The root route element is [root-layout.tsx](packages/cli/src/layouts/root-layout.tsx), which nests providers around a themed root: `KeyboardLayerProvider > ThemeProvider > DialogProvider > ToastProvider > ThemedRoot > <Outlet />`. Order matters — `DialogProvider`/`ToastProvider` read `useTheme`, and `DialogProvider` reads `useKeyboardLayer`.
 
 - `providers/keyboard-layer` — a layer stack (`push`/`pop`/`isTopLayer`) so ctrl+c and other global keys route to the topmost UI layer (dialog, command menu, etc.) instead of always quitting. Layers register an optional `Responder` that can intercept ctrl+c and return `true` to stop it propagating.
 - `providers/theme` — `THEMES`/`DEFAULT_THEME`/`ThemeColors` live in [theme.ts](packages/cli/src/theme.ts). Preference persists to `~/.nicecode/preferences.json` (`setTheme` persists, `previewTheme` doesn't — used for live preview while navigating the theme dialog).
@@ -40,7 +40,11 @@ bun install                 # from repo root; workspaces are hoisted here
 bun run dev:cli             # root: watch-run the TUI
 bun run dev:server          # root: hot-run the API server
 bun run typecheck           # tsc --noEmit in every package (bun --filter)
+bun run db:up               # start local PostgreSQL 17 (docker/docker-compose.yml) and wait until healthy
+bun run db:down             # stop it (data kept in the nicecode-dev-data volume)
+bun run db:reset            # stop and delete the volume (wipes data)
 bun run db:generate         # prisma generate in packages/database
+bun run db:studio           # prisma studio
 ```
 
 - **No test framework is configured.** There is no test script, runner, or test file. If tests are needed, `bun test` is the natural fit — ask before adding a framework.
@@ -61,7 +65,7 @@ Strict mode with `noUncheckedIndexedAccess`, `noImplicitOverride`, and `noFallth
 
 ## Style & commits
 
-Prettier ([.prettierrc](.prettierrc)) — **no semicolons**, double quotes, 100 col, `trailingComma: "none"`, 2-space indent. `eslint-config-prettier` is last in the ESLint chain, so formatting is Prettier's job, not ESLint's.
+Prettier ([.prettierrc](.prettierrc)) — **no semicolons**, double quotes, 100 col, `trailingComma: "none"`, 4-space indent. `eslint-config-prettier` is last in the ESLint chain, so formatting is Prettier's job, not ESLint's.
 
 Husky enforces [commitlint](commitlint.config.js) with `@commitlint/config-conventional` on `commit-msg`, so commits **must** be conventional (`feat:`, `fix:`, `chore:`, …). `.husky/pre-commit` is empty — nothing runs before commit.
 

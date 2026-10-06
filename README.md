@@ -30,11 +30,12 @@ bun install
 Set up the database (PostgreSQL 17 in Docker, container and database both named `nicecode-dev`):
 
 ```bash
-cp .env.example .env                      # root env
-cp .env.example packages/database/.env    # Prisma reads DATABASE_URL from here
+cp .env.example .env                      # root env — set DATABASE_URL (Prisma and the server both read it from here)
 bun run db:up                             # start Postgres and wait until healthy
-bun run db:generate                       # generate the Prisma client
+bun run db:generate                       # generate the Prisma client (output is committed)
 ```
+
+Example `DATABASE_URL` for the default Docker setup: `postgresql://postgres:postgres@localhost:5432/nicecode-dev`.
 
 Other DB commands:
 
@@ -48,20 +49,25 @@ Defaults are `postgres` / `postgres` on port `5432`; override with `POSTGRES_USE
 Run in development mode (from the repo root):
 
 ```bash
-bun run dev:server   # API server
-bun run dev:cli      # TUI
+bun run dev:server   # API server on http://localhost:3000
+bun run dev:cli      # TUI (set API_BASE_URL to point at another server)
 ```
 
-Typecheck all packages / generate the Prisma client:
+The server must be running for the TUI to list/create sessions.
+
+Quality checks (also run in CI):
 
 ```bash
-bun run typecheck
-bun run db:generate
+bun run lint          # ESLint (lint:fix to autofix)
+bun run format:check  # Prettier (format to write)
+bun run typecheck     # tsc --noEmit in every package
 ```
+
+Other: `bun run db:studio` opens Prisma Studio. Commits must follow [Conventional Commits](https://www.conventionalcommits.org/) (enforced by commitlint via Husky).
 
 ## Packages
 
-- **[cli](packages/cli)** — Terminal UI app built with `@opentui/react`, created via `bun create tui`.
-- **[server](packages/server)** — Hono API server (`@nicecode/server`), its route types are consumed by the CLI via `hono/client`.
+- **[cli](packages/cli)** — Terminal UI app built with `@opentui/react` and `react-router` (home, new session, session screens; themes, dialogs, toasts, command menu).
+- **[server](packages/server)** — Hono API server (`@nicecode/server`) with `/session` routes and Sentry error/log reporting; its route types are consumed by the CLI via `hono/client`.
 - **[shared](packages/shared)** — Shared Zod schemas and models (`@nicecode/shared`).
-- **[database](packages/database)** — Prisma ORM contract, config and generated client (`@nicecode/database`). Needs `DATABASE_URL` in `packages/database/.env` (see Getting Started).
+- **[database](packages/database)** — Prisma 7 schema (`Session`, `Message`), config and generated client (`@nicecode/database`). Needs `DATABASE_URL` in the root `.env` (see Getting Started).
