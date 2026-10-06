@@ -59,7 +59,7 @@ const streamAIResponse = async (
             abortSignal: abortController.signal
         })
 
-        for await (const part of result.fullStream) {
+        for await (const part of result.stream) {
             if (stream.aborted) break
 
             if (part.type === "text-delta") {
