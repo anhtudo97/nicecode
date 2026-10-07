@@ -1,11 +1,11 @@
 import { apiClient } from "@/lib/api-client"
 import { getErrorMessage } from "@/lib/http-error"
 import type { Mode } from "@nicecode/database/enums"
-import { chatStreamEventSchema, type SupportedChatModel } from "@nicecode/shared"
+import { chatStreamEventSchema, type SupportedChatModelId } from "@nicecode/shared"
 import { EventSourceParserStream } from "eventsource-parser/stream"
 import type { ClientResponse } from "hono/client"
 import prettyMs from "pretty-ms"
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 export type ClientMessagePart = {
     type: "text"
@@ -18,14 +18,14 @@ export type Message =
           role: "user"
           content: string
           mode: Mode
-          model: SupportedChatModel
+          model: SupportedChatModelId
       }
     | {
           id: string
           role: "assistant"
           content: string
           mode: Mode
-          model: SupportedChatModel
+          model: SupportedChatModelId
           parts: ClientMessagePart[]
           duration?: string
       }
@@ -43,26 +43,26 @@ type StreamingState =
           status: "streaming"
           parts: ClientMessagePart[]
           mode: Mode
-          model: SupportedChatModel
+          model: SupportedChatModelId
       }
 
 type ActiveStream = {
     requestId: string
     controller: AbortController
     mode: Mode
-    model: SupportedChatModel
+    model: SupportedChatModelId
     parts: ClientMessagePart[]
 }
 
 type SubmitParams = {
     userText: string
     mode: Mode
-    model: SupportedChatModel
+    model: SupportedChatModelId
 }
 
 type RunStreamParams = {
     mode: Mode
-    model: SupportedChatModel
+    model: SupportedChatModelId
     request: (controller: AbortController) => Promise<ClientResponse<unknown>>
 }
 
@@ -271,8 +271,61 @@ export const useChat = (sessionId: string, initialMessages: Message[]) => {
         [runStream, sessionId]
     )
 
+    const hasAutoResumeRef = useRef(false)
+    useEffect(() => {
+        if (hasAutoResumeRef.current) return
+        const last = initialMessages.at(-1)
+        if (!last || last.role !== "user") return
+
+        hasAutoResumeRef.current = true
+        // Defer so resume's synchronous setStreaming doesn't run inside the effect body
+        const { mode, model } = last
+        queueMicrotask(() => void resume({ mode, model }))
+    }, [initialMessages, resume])
+
+    const submit = useCallback(
+        async ({ mode, model, userText }: SubmitParams) => {
+            const userMessage: Message = {
+                id: crypto.randomUUID(),
+                role: "user",
+                content: userText,
+                mode,
+                model
+            }
+            updateMessages((prev) => [...prev, userMessage])
+
+            await runStream({
+                mode,
+                model,
+                request: async (controller) => {
+                    return apiClient.chat[":sessionId"].$post(
+                        {
+                            param: { sessionId },
+                            json: { content: userText, mode, model: model }
+                        },
+                        {
+                            init: { signal: controller.signal }
+                        }
+                    )
+                }
+            })
+        },
+        [runStream, sessionId, updateMessages]
+    )
+
+    const abort = useCallback(() => {
+        const activeStream = activeStreamRef.current
+        if (!activeStream) return
+
+        activeStreamRef.current = null
+        setStreaming({ status: "idle" })
+        activeStream.controller.abort()
+    }, [activeStreamRef])
+
     return {
-        runStream,
-        resume
+        messages,
+        streaming,
+        submit,
+        abort
     }
 }

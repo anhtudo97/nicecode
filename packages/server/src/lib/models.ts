@@ -51,7 +51,7 @@ const resolveSupportedChatModel = (model: SupportedChatModel): ResolvedModel => 
 }
 
 export const isSupportedChatModel = (modelId: string): modelId is SupportedChatModelId => {
-    return findSupportedChatModelById(modelId) !== null
+    return findSupportedChatModelById(modelId) !== undefined
 }
 
 export const resolveChatModel = (modelId: string): ResolvedModel => {

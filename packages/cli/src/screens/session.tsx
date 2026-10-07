@@ -1,11 +1,14 @@
 import { BotMessage, ErrorMessage, UserMessage } from "@/components/messages"
 import { SessionShell } from "@/components/messages/session-shell"
+import { useChat, type Message } from "@/hooks/use-chat"
 import { apiClient } from "@/lib/api-client"
 import { getErrorMessage } from "@/lib/http-error"
 import { useToast } from "@/providers/toast"
+import { DEFAULT_CHAT_MODEL_ID, type SupportedChatModelId } from "@nicecode/shared"
 import type { InferResponseType } from "hono"
+import prettyMs from "pretty-ms"
 import { useEffect, useMemo, useState } from "react"
-import { useParams, useLocation, useNavigate } from "react-router"
+import { useLocation, useNavigate, useParams } from "react-router"
 import z from "zod"
 
 type SessionData = InferResponseType<(typeof apiClient.session)[":id"]["$get"], 200>
@@ -14,14 +17,78 @@ const sessionLocationSchema = z.object({
     session: z.custom<SessionData>((val) => val !== null && typeof val === "object" && "id" in val)
 })
 
-const ChatMessage = ({ message }: { message: SessionData["messages"][number] }) => {
-    if (message.role === "USER") {
+const mapDBMessages = (dbMessages: SessionData["messages"]): Message[] => {
+    return dbMessages.map((message): Message => {
+        if (message.role === "ERROR") {
+            return {
+                id: message.id,
+                role: "error",
+                content: message.content
+            }
+        }
+        if (message.role === "USER") {
+            return {
+                id: message.id,
+                role: "user",
+                content: message.content,
+                mode: message.mode,
+                model: message.model as SupportedChatModelId
+            }
+        }
+        return {
+            id: message.id,
+            role: "assistant",
+            content: message.content,
+            mode: message.mode,
+            model: message.model as SupportedChatModelId,
+            parts: [{ type: "text", text: message.content }],
+            ...(message.duration != null ? { duration: prettyMs(message.duration * 1000) } : {})
+        }
+    })
+}
+
+const ChatMessage = ({ message }: { message: Message }) => {
+    if (message.role === "user") {
         return <UserMessage message={message.content} />
     }
-    if (message.role === "ERROR") {
+    if (message.role === "error") {
         return <ErrorMessage message={message.content} />
     }
-    return <BotMessage content={message.content} model={message.model} />
+    return (
+        <BotMessage
+            parts={message.parts}
+            model={message.model}
+            mode={message.mode}
+            duration={message.duration}
+            streaming={false}
+        />
+    )
+}
+
+const SessionChat = ({ session }: { session: SessionData }) => {
+    const [initalMessages] = useState(() => mapDBMessages(session.messages))
+    const { messages, streaming, submit, abort } = useChat(session.id, initalMessages)
+
+    useEffect(() => {
+        return () => abort()
+    }, [abort])
+
+    return (
+        <SessionShell
+            onSubmit={(text) => {
+                submit({
+                    userText: text,
+                    mode: "BUILD",
+                    model: DEFAULT_CHAT_MODEL_ID
+                })
+            }}
+            loading={streaming.status === "streaming"}
+        >
+            {messages.map((message) => (
+                <ChatMessage key={message.id} message={message} />
+            ))}
+        </SessionShell>
+    )
 }
 
 export const Session = () => {
@@ -69,11 +136,5 @@ export const Session = () => {
 
     if (!session) return <SessionShell onSubmit={() => {}} inputDisabled loading />
 
-    return (
-        <SessionShell onSubmit={() => {}} inputDisabled>
-            {session.messages.map((message) => (
-                <ChatMessage key={message.id} message={message} />
-            ))}
-        </SessionShell>
-    )
+    return <SessionChat key={session.id} session={session} />
 }
