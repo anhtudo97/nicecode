@@ -87,6 +87,14 @@ const SessionChat = ({ session }: { session: SessionData }) => {
             {messages.map((message) => (
                 <ChatMessage key={message.id} message={message} />
             ))}
+            {streaming.status === "streaming" && streaming.parts.length > 0 && (
+                <BotMessage
+                    parts={streaming.parts}
+                    model={streaming.model}
+                    mode={streaming.mode}
+                    streaming={true}
+                />
+            )}
         </SessionShell>
     )
 }

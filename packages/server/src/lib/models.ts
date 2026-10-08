@@ -1,5 +1,6 @@
 import { anthropic } from "@ai-sdk/anthropic"
 import { openai } from "@ai-sdk/openai"
+import { google } from "@ai-sdk/google"
 import {
     findSupportedChatModelById,
     type SupportedChatModel,
@@ -10,6 +11,7 @@ import type { LanguageModel } from "ai"
 
 type AnthropicModelId = Extract<SupportedChatModel, { provider: "anthropic" }>["id"]
 type OpenAIModelId = Extract<SupportedChatModel, { provider: "openai" }>["id"]
+type GoogleModelId = Extract<SupportedChatModel, { provider: "google" }>["id"]
 
 export type ResolvedModel = {
     model: LanguageModel
@@ -37,6 +39,14 @@ const resolveOpenAIModel = (modelId: OpenAIModelId): ResolvedModel => {
     }
 }
 
+const resolveGoogleModel = (modelId: GoogleModelId): ResolvedModel => {
+    return {
+        model: google(modelId),
+        provider: "google",
+        modelId
+    }
+}
+
 const resolveSupportedChatModel = (model: SupportedChatModel): ResolvedModel => {
     const provider = model.provider
     const modelId = model.id
@@ -45,6 +55,8 @@ const resolveSupportedChatModel = (model: SupportedChatModel): ResolvedModel => 
             return resolveAnthropicModel(modelId as AnthropicModelId)
         case "openai":
             return resolveOpenAIModel(modelId as OpenAIModelId)
+        case "google":
+            return resolveGoogleModel(modelId as GoogleModelId)
         default:
             return assertUnsupportedModel(provider)
     }
