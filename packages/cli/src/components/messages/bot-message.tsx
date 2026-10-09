@@ -10,9 +10,17 @@ type Props = {
     mode: Mode
     duration?: string
     streaming?: boolean
+    interrupted?: boolean
 }
 
-export const BotMessage = ({ parts, model, mode, duration, streaming }: Props) => {
+export const BotMessage = ({
+    parts,
+    model,
+    mode,
+    duration,
+    streaming = false,
+    interrupted = false
+}: Props) => {
     const { colors } = useTheme()
     const text = parts
         .filter((p) => p.type === "text")
@@ -29,19 +37,34 @@ export const BotMessage = ({ parts, model, mode, duration, streaming }: Props) =
 
             <Box paddingX={3} paddingBottom={1} gap={1} width="100%">
                 <Box flexDirection="row" gap={2}>
-                    <Text fg={mode === Mode.PLAN ? colors.planMode : colors.primary}>◉</Text>
+                    <Text
+                        attributes={interrupted ? TextAttributes.DIM : 0}
+                        fg={
+                            interrupted
+                                ? undefined
+                                : mode === Mode.PLAN
+                                  ? colors.planMode
+                                  : colors.primary
+                        }
+                    >
+                        ◉
+                    </Text>
                     <Box flexDirection="row" gap={1}>
-                        <Text>{mode === Mode.PLAN ? "Plan" : "Build"}</Text>
+                        <Text attributes={interrupted ? TextAttributes.DIM : 0}>
+                            {mode === Mode.PLAN ? "Plan" : "Build"}
+                        </Text>
                         <Text attributes={TextAttributes.DIM} fg={colors.dimSeparator}>
                             ›
                         </Text>
                         <Text attributes={TextAttributes.DIM}>{model}</Text>
-                        {duration && (
+                        {(duration || interrupted) && (
                             <>
                                 <Text attributes={TextAttributes.DIM} fg={colors.dimSeparator}>
                                     ›
                                 </Text>
-                                <Text attributes={TextAttributes.DIM}>{duration}</Text>
+                                <Text attributes={TextAttributes.DIM}>
+                                    {interrupted ? "interrupted" : duration}
+                                </Text>
                             </>
                         )}
                     </Box>

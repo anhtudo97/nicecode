@@ -3,8 +3,11 @@ import { SessionShell } from "@/components/messages/session-shell"
 import { useChat, type Message } from "@/hooks/use-chat"
 import { apiClient } from "@/lib/api-client"
 import { getErrorMessage } from "@/lib/http-error"
+import { useKeyboardLayer } from "@/providers/keyboard-layer"
 import { useToast } from "@/providers/toast"
+import { MessageStatus } from "@nicecode/database"
 import { DEFAULT_CHAT_MODEL_ID, type SupportedChatModelId } from "@nicecode/shared"
+import { useKeyboard } from "@opentui/react"
 import type { InferResponseType } from "hono"
 import prettyMs from "pretty-ms"
 import { useEffect, useMemo, useState } from "react"
@@ -42,7 +45,8 @@ const mapDBMessages = (dbMessages: SessionData["messages"]): Message[] => {
             mode: message.mode,
             model: message.model as SupportedChatModelId,
             parts: [{ type: "text", text: message.content }],
-            ...(message.duration != null ? { duration: prettyMs(message.duration * 1000) } : {})
+            ...(message.duration != null ? { duration: prettyMs(message.duration * 1000) } : {}),
+            interrupted: message.status === MessageStatus.INTERRUPTED
         }
     })
 }
@@ -61,17 +65,26 @@ const ChatMessage = ({ message }: { message: Message }) => {
             mode={message.mode}
             duration={message.duration}
             streaming={false}
+            interrupted={message.interrupted}
         />
     )
 }
 
 const SessionChat = ({ session }: { session: SessionData }) => {
     const [initalMessages] = useState(() => mapDBMessages(session.messages))
-    const { messages, streaming, submit, abort } = useChat(session.id, initalMessages)
+    const { isTopLayer } = useKeyboardLayer()
+    const { messages, streaming, submit, abort, interrupt } = useChat(session.id, initalMessages)
 
     useEffect(() => {
         return () => abort()
     }, [abort])
+
+    useKeyboard((key) => {
+        if (key.name === "escape" && isTopLayer("base") && streaming.status === "streaming") {
+            key.preventDefault()
+            interrupt()
+        }
+    })
 
     return (
         <SessionShell
@@ -83,6 +96,7 @@ const SessionChat = ({ session }: { session: SessionData }) => {
                 })
             }}
             loading={streaming.status === "streaming"}
+            interruptible={streaming.status === "streaming"}
         >
             {messages.map((message) => (
                 <ChatMessage key={message.id} message={message} />
