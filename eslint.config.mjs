@@ -13,7 +13,8 @@ export default defineConfig(
         "**/build/**",
         "**/out/**",
         "bun.lock",
-        "packages/database/src/prisma/**"
+        "packages/database/src/prisma/**",
+        "packages/database/generated/**"
     ]),
     js.configs.recommended,
     ...tseslint.configs.recommended,

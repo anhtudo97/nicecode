@@ -4,3 +4,4 @@ build/**
 .claude/
 packages/database/prisma/db.ts
 packages/database/prisma-8.md
+packages/database/generated/

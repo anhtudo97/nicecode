@@ -4,6 +4,10 @@ on:
     push:
     pull_request:
 
+env:
+    # prisma generate (server postinstall) needs the var to load config; it never connects
+    DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nicecode
+
 concurrency:
     group: ci-${{ github.workflow }}-${{ github.ref }}
     cancel-in-progress: true
