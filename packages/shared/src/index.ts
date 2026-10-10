@@ -7,3 +7,12 @@ export {
     findSupportedChatModelById,
     DEFAULT_CHAT_MODEL_ID
 } from "./model"
+
+export {
+    toolCallArgsSchema,
+    messagePartScheme,
+    messagePartsSchema,
+    chatStreamEventSchema,
+    type MessagePart,
+    type ChatStreamEvent
+} from "./schemas"
