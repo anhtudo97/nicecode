@@ -9,13 +9,13 @@ export const RootLayout = () => {
     return (
         <KeyboardLayerProvider>
             <ThemeProvider>
-                <DialogProvider>
-                    <ToastProvider>
+                <ToastProvider>
+                    <DialogProvider>
                         <ThemedRoot>
                             <Outlet />
                         </ThemedRoot>
-                    </ToastProvider>
-                </DialogProvider>
+                    </DialogProvider>
+                </ToastProvider>
             </ThemeProvider>
         </KeyboardLayerProvider>
     )

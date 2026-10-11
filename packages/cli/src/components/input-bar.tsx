@@ -11,6 +11,7 @@ import type { Command } from "./command-menu/types"
 import { CommandMenu } from "./command-menu"
 import { useToast } from "@/providers/toast"
 import { useKeyboardLayer } from "@/providers/keyboard-layer"
+import { useNavigate } from "react-router"
 
 type InputBarProps = {
     onSubmit: (value: string) => void
@@ -31,6 +32,7 @@ export function InputBar({ onSubmit, disabled }: InputBarProps) {
     const toast = useToast()
     const dialog = useDialog()
     const { colors } = useTheme()
+    const navigate = useNavigate()
 
     const { isTopLayer, setResponder } = useKeyboardLayer()
 
@@ -62,13 +64,14 @@ export function InputBar({ onSubmit, disabled }: InputBarProps) {
                 command.action({
                     exit: () => renderer.destroy(),
                     toast,
-                    dialog
+                    dialog,
+                    navigate
                 })
             } else {
                 textarea.insertText(command.value + " ")
             }
         },
-        [renderer, toast, dialog]
+        [renderer, toast, dialog, navigate]
     )
 
     const handleSubmit = useCallback(() => {

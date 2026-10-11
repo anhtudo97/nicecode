@@ -1,5 +1,5 @@
 import { Text } from "@/components/ui/primitives"
-import { ThemeDialogContent } from "@/dialogs"
+import { SessionDialogContent, ThemeDialogContent } from "@/dialogs"
 import type { Command } from "./types"
 
 export const COMMANDS: Command[] = [
@@ -8,7 +8,7 @@ export const COMMANDS: Command[] = [
         description: "Start a new conversation",
         value: "/new",
         action: (ctx) => {
-            ctx.toast.show({ message: "Starting a new conversation ...", variant: "info" })
+            ctx.navigate("/")
         }
     },
     {
@@ -38,7 +38,10 @@ export const COMMANDS: Command[] = [
         description: "Manage your sessions",
         value: "/sessions",
         action: (ctx) => {
-            ctx.toast.show({ message: "Managing your sessions ...", variant: "info" })
+            ctx.dialog.open({
+                title: "Sessions",
+                children: <SessionDialogContent />
+            })
         }
     },
     {
