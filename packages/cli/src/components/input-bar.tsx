@@ -1,7 +1,8 @@
 import type { KeyBinding, TextareaRenderable } from "@opentui/core"
 import { useTheme } from "@/providers/theme"
 import { useDialog } from "@/providers/dialog"
-import { useRenderer } from "@opentui/react"
+import { usePromptConfig } from "@/providers/prompt-config"
+import { useKeyboard, useRenderer } from "@opentui/react"
 import { useCallback, useEffect, useRef } from "react"
 import { SplitBorder } from "./border"
 import { StatusBar } from "./status-bar"
@@ -12,6 +13,7 @@ import { CommandMenu } from "./command-menu"
 import { useToast } from "@/providers/toast"
 import { useKeyboardLayer } from "@/providers/keyboard-layer"
 import { useNavigate } from "react-router"
+import { Mode } from "@nicecode/database/enums"
 
 type InputBarProps = {
     onSubmit: (value: string) => void
@@ -26,6 +28,7 @@ export const TEXTAREA_KEY_BINDINGS: KeyBinding[] = [
 ]
 
 export function InputBar({ onSubmit, disabled }: InputBarProps) {
+    const { mode, model, setMode, setModel, toggleMode } = usePromptConfig()
     const textareaRef = useRef<TextareaRenderable>(null)
     const onSubmitRef = useRef<() => void>(() => {})
     const renderer = useRenderer()
@@ -65,13 +68,16 @@ export function InputBar({ onSubmit, disabled }: InputBarProps) {
                     exit: () => renderer.destroy(),
                     toast,
                     dialog,
-                    navigate
+                    navigate,
+                    mode,
+                    setMode,
+                    setModel
                 })
             } else {
                 textarea.insertText(command.value + " ")
             }
         },
-        [renderer, toast, dialog, navigate]
+        [toast, dialog, navigate, mode, setMode, setModel, renderer]
     )
 
     const handleSubmit = useCallback(() => {
@@ -107,6 +113,15 @@ export function InputBar({ onSubmit, disabled }: InputBarProps) {
         [handleCommand, resolveCommand]
     )
 
+    useKeyboard((key) => {
+        if (disabled) return
+        if (isTopLayer("base")) return
+        if (key.name === "tab") {
+            key.preventDefault()
+            toggleMode()
+        }
+    })
+
     useEffect(() => {
         const textarea = textareaRef.current
         if (!textarea) return
@@ -134,7 +149,12 @@ export function InputBar({ onSubmit, disabled }: InputBarProps) {
 
     return (
         <Box width="100%" alignItems="center">
-            <Box {...SplitBorder} border={["left"]} borderColor={colors.primary} width="100%">
+            <Box
+                {...SplitBorder}
+                border={["left"]}
+                borderColor={mode === Mode.PLAN ? colors.planMode : colors.primary}
+                width="100%"
+            >
                 <Box
                     position="relative"
                     justifyContent="center"
