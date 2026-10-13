@@ -1,6 +1,7 @@
 import { InputBar } from "@/components/input-bar"
 import { Spinner } from "@/components/spinner"
 import { Box, Scrollbox, Text } from "@/components/ui/primitives"
+import { usePromptConfig } from "@/providers/prompt-config"
 import { TextAttributes } from "@opentui/core"
 import type { ReactNode } from "react"
 
@@ -19,6 +20,7 @@ export const SessionShell = ({
     loading = false,
     interruptible = false
 }: Props) => {
+    const { mode } = usePromptConfig()
     return (
         <Box
             flexDirection="column"
@@ -49,7 +51,7 @@ export const SessionShell = ({
                 <Box flexDirection="row" alignItems="center" gap={2}>
                     {loading ? (
                         <>
-                            <Spinner />
+                            <Spinner mode={mode} />
                             {interruptible ? <Text>esc to interrupt</Text> : null}
                         </>
                     ) : null}
