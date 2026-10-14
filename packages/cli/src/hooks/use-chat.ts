@@ -7,10 +7,25 @@ import type { ClientResponse } from "hono/client"
 import prettyMs from "pretty-ms"
 import { useCallback, useEffect, useRef, useState } from "react"
 
-export type ClientMessagePart = {
-    type: "text"
-    text: string
+export type ClientToolCallPart = {
+    type: "tool-call"
+    id: string
+    name: string
+    args: Record<string, unknown>
+    result?: string
+    status?: "calling" | "done"
 }
+
+export type ClientMessagePart =
+    | {
+          type: "text"
+          text: string
+      }
+    | ClientToolCallPart
+    | {
+          type: "reasoning"
+          text: string
+      }
 
 export type Message =
     | {
