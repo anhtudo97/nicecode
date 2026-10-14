@@ -1,7 +1,7 @@
 import { Box, Text } from "@/components/ui/primitives"
 import type { ClientMessagePart } from "@/hooks/use-chat"
 import { useTheme } from "@/providers/theme"
-import { Mode } from "@nicecode/database"
+import { Mode } from "@nicecode/database/enums"
 import { TextAttributes } from "@opentui/core"
 
 type Props = {
