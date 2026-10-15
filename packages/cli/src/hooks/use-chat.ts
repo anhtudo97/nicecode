@@ -200,6 +200,44 @@ export const useChat = (sessionId: string, initialMessages: Message[]) => {
                     break
                 }
                 switch (event.type) {
+                    case "reasoning-delta": {
+                        const last = parts.at(-1)
+                        if (last && last.type === "reasoning") {
+                            last.text += event.text
+                        } else {
+                            parts.push({
+                                type: "reasoning",
+                                text: event.text
+                            })
+                        }
+                        emitParts(activeStream.requestId, parts)
+                        break
+                    }
+                    case "tool-call": {
+                        parts.push({
+                            type: "tool-call",
+                            id: event.toolCallId,
+                            name: event.toolName,
+                            args: event.args,
+                            status: "calling"
+                        })
+                        emitParts(activeStream.requestId, parts)
+                        break
+                    }
+                    case "tool-result": {
+                        const tc = parts.find(
+                            (p): p is ClientToolCallPart =>
+                                p.type === "tool-call" && p.id === event.toolCallId
+                        )
+
+                        if (tc) {
+                            tc.status = "done"
+                            tc.result = event.result
+                        }
+
+                        emitParts(activeStream.requestId, parts)
+                        break
+                    }
                     case "text-delta": {
                         const last = parts.at(-1)
                         if (last && last.type === "text") {
