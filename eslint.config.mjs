@@ -38,7 +38,8 @@ export default defineConfig(
                 "warn",
                 { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }
             ],
-            "react-hooks/refs": "off"
+            "react-hooks/refs": "off",
+            "react/no-unknown-property": ["error", { ignore: ["fg", "bg"] }]
         }
     },
     prettierConfig

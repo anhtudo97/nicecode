@@ -16,7 +16,7 @@ export const messagePartScheme = z.discriminatedUnion("type", [
     }),
     z.object({
         type: z.literal("text"),
-        content: z.string()
+        text: z.string()
     })
 ])
 
@@ -35,6 +35,12 @@ export const chatStreamEventSchema = z.discriminatedUnion("type", [
     }),
     z.object({
         type: z.literal("tool-call-delta"),
+        toolCallId: z.string(),
+        toolName: z.string(),
+        args: toolCallArgsSchema
+    }),
+    z.object({
+        type: z.literal("tool-call"),
         toolCallId: z.string(),
         toolName: z.string(),
         args: toolCallArgsSchema

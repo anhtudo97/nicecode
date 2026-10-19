@@ -1,36 +1,39 @@
-import { Header } from "@/components/header"
-import { InputBar } from "@/components/input-bar"
+import { Box, Text } from "@/components/ui/primitives"
+import { TextAttributes } from "@opentui/core"
 import { useCallback } from "react"
-import { Box } from "@/components/ui/primitives"
-import { useTheme } from "@/providers/theme"
 import { useNavigate } from "react-router"
+import { Header } from "../components/header"
+import { InputBar } from "../components/input-bar"
+import { usePromptConfig } from "../providers/prompt-config"
 
-export const Home = () => {
-    const { colors } = useTheme()
-
+export function Home() {
     const navigate = useNavigate()
+    const { mode, model } = usePromptConfig()
 
     const handleSubmit = useCallback(
-        (value: string) => {
-            navigate("/session/new", { state: { message: value } })
+        (text: string) => {
+            navigate("/sessions/new", { state: { message: text, mode, model } })
         },
-        [navigate]
+        [navigate, mode, model]
     )
 
     return (
         <Box
-            position="relative"
             alignItems="center"
             justifyContent="center"
-            backgroundColor={colors.background}
+            flexGrow={1}
+            gap={2}
+            position="relative"
             width="100%"
             height="100%"
-            gap={2}
-            flexGrow={1}
         >
             <Header />
-            <Box width="100%" maxWidth={78} paddingX={2}>
+            <Box width="100%" maxWidth={78} paddingX={2} flexDirection="column" gap={1}>
                 <InputBar onSubmit={handleSubmit} />
+                <Box flexDirection="row" gap={1} flexShrink={0} marginLeft="auto">
+                    <Text>tab</Text>
+                    <Text attributes={TextAttributes.DIM}>agents</Text>
+                </Box>
             </Box>
         </Box>
     )
