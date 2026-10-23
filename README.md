@@ -50,10 +50,33 @@ Run in development mode (from the repo root):
 
 ```bash
 bun run dev:server   # API server on http://localhost:3000
-bun run dev:cli      # TUI (set API_BASE_URL to point at another server)
+bun run dev:cli      # TUI (set API_URL to point at another server)
 ```
 
 The server must be running for the TUI to list/create sessions.
+
+## Authentication (CLI login)
+
+The CLI signs in through [Clerk](https://clerk.com/) using OAuth 2.0 Authorization Code + PKCE. Login and logout are in the command menu.
+
+Env vars:
+
+- CLI: `CLERK_FRONTEND_API`, `CLERK_OAUTH_CLIENT_ID`, `API_URL` (default `http://localhost:3000`)
+- Server: `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY`
+
+Flow:
+
+```
+CLI ── starts local server (random port) ── opens browser ──> Clerk /oauth/authorize
+Clerk ── redirects ──> API /auth/callback ── forwards ──> http://localhost:<port>/callback
+CLI ── checks nonce, sends code + PKCE verifier ──> Clerk /oauth/token ──> access token
+```
+
+1. The CLI opens a temporary local server and a browser tab to Clerk, passing `state` = `{ port, nonce }`.
+2. After login, Clerk redirects to the API's `/auth/callback`, which reads the port from `state` and forwards the browser to the CLI's local server.
+3. The CLI verifies the nonce, exchanges the code for an access token and saves it to `~/.nicecode/auth.json` (owner-only permissions). Logout deletes that file.
+
+Login fails if it is not completed within 5 minutes.
 
 Quality checks (also run in CI):
 

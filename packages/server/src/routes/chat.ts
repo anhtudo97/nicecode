@@ -15,6 +15,7 @@ import {
 import { createTools } from "../tools"
 import { buildSystemPrompt } from "../system-prompt"
 import { isSupportedChatModel, resolveChatModel } from "../lib/models"
+import type { AuthenticatedEnv } from "../middleware/require-auth"
 
 const submitSchema = z.object({
     content: z.string(),
@@ -30,9 +31,10 @@ const submitValidator = zValidator("json", submitSchema, (result, c) => {
 
 const activeResumeSessionIds = new Set<string>()
 
-const buildConversationHistory = (
+// Strip error messages and empty assistant messages from the conversation
+function buildConversationHistory(
     messages: { role: "USER" | "ASSISTANT" | "ERROR"; content: string; status: MessageStatus }[]
-) => {
+) {
     return messages.flatMap((m) => {
         if (m.role === "ERROR") return []
         if (m.role === "ASSISTANT" && m.content.length === 0) return []
@@ -45,15 +47,18 @@ const buildConversationHistory = (
     })
 }
 
-const getResumeableUserMessage = (
+function getResumableUserMessage(
     messages: {
         role: "USER" | "ASSISTANT" | "ERROR"
         model: string
         mode: Mode
     }[]
-) => {
-    const lastMessage = messages.at(-1)
-    if (!lastMessage || lastMessage.role !== "USER") return null
+) {
+    const lastMessage = messages[messages.length - 1]
+    if (!lastMessage || lastMessage.role !== "USER") {
+        return null
+    }
+
     return lastMessage
 }
 
@@ -66,11 +71,11 @@ type StreamParams = {
     abortController: AbortController
 }
 
-const streamAIResponse = async (
+async function streamAIResponse(
     stream: Parameters<Parameters<typeof streamSSE>[1]>[0],
     params: StreamParams
-) => {
-    const { sessionId, model, history, mode, abortController, cwd } = params
+) {
+    const { sessionId, model, cwd, history, mode, abortController } = params
     const startTime = Date.now()
     const tools = cwd ? createTools(cwd, mode) : undefined
     const parts: MessagePart[] = []
@@ -115,11 +120,11 @@ const streamAIResponse = async (
             providerOptions: resolvedModel.providerOptions
         })
 
-        for await (const part of result.stream) {
+        for await (const part of result.fullStream) {
             if (stream.aborted) break
 
             if (part.type === "reasoning-delta") {
-                const last = parts.at(-1)
+                const last = parts[parts.length - 1]
                 if (last && last.type === "reasoning") {
                     last.text += part.text
                 } else {
@@ -133,7 +138,7 @@ const streamAIResponse = async (
             }
 
             if (part.type === "text-delta") {
-                const last = parts.at(-1)
+                const last = parts[parts.length - 1]
                 if (last && last.type === "text") {
                     last.text += part.text
                 } else {
@@ -248,12 +253,13 @@ const streamAIResponse = async (
     }
 }
 
-const app = new Hono()
+const app = new Hono<AuthenticatedEnv>()
     .post("/:sessionId/resume", async (c) => {
         const sessionId = c.req.param("sessionId")
+        const userId = c.get("userId")
 
         const session = await db.session.findUnique({
-            where: { id: sessionId },
+            where: { id: sessionId, userId },
             include: { messages: { orderBy: { createdAt: "asc" } } }
         })
 
@@ -261,7 +267,7 @@ const app = new Hono()
             return c.json({ error: "Session not found" }, 404)
         }
 
-        const resumableMessage = getResumeableUserMessage(session.messages)
+        const resumableMessage = getResumableUserMessage(session.messages)
         if (!resumableMessage) {
             return c.json({ error: "Session has no pending user message to resume" }, 409)
         }
@@ -327,9 +333,10 @@ const app = new Hono()
     })
     .post("/:sessionId", submitValidator, async (c) => {
         const sessionId = c.req.param("sessionId")
+        const userId = c.get("userId")
 
         const session = await db.session.findUnique({
-            where: { id: sessionId },
+            where: { id: sessionId, userId },
             include: { messages: { orderBy: { createdAt: "asc" } } }
         })
 
@@ -351,7 +358,7 @@ const app = new Hono()
         })
 
         const history = buildConversationHistory([
-            ...session.messages,
+            ...session.messages, // TODO: limit to last 10, 5 messages?
             {
                 role: "USER" as const,
                 content: data.content,
