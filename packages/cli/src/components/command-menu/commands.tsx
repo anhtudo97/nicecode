@@ -5,10 +5,12 @@ import {
     SessionDialogContent,
     ThemeDialogContent
 } from "@/dialogs"
+import { clearAuth } from "@/lib/auth"
+import { performLogin } from "@/lib/oauth"
 import type { Command } from "./types"
 
-import { performLogin } from "../../lib/oauth"
-import { clearAuth } from "../../lib/auth"
+// Prevents a second /login from starting another callback server while one is pending
+let loginInProgress = false
 
 export const COMMANDS: Command[] = [
     {
@@ -73,6 +75,12 @@ export const COMMANDS: Command[] = [
         description: "Sign in with your browser",
         value: "/login",
         action: async (ctx) => {
+            if (loginInProgress) {
+                ctx.toast.show({ message: "Sign in already in progress" })
+                return
+            }
+
+            loginInProgress = true
             ctx.toast.show({ message: "Opening browser to sign in..." })
 
             try {
@@ -83,6 +91,8 @@ export const COMMANDS: Command[] = [
                     error instanceof Error ? error.message : "Sign in failed or timed out"
 
                 ctx.toast.show({ variant: "error", message })
+            } finally {
+                loginInProgress = false
             }
         }
     },
