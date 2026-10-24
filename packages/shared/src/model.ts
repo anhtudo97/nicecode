@@ -1,4 +1,4 @@
-export type ModelPrcing = {
+export type ModelPricing = {
     inputUsdPerMillionTokens: number
     outputUsdPerMillionTokens: number
 }
@@ -8,7 +8,7 @@ export type SupportedProvider = "anthropic" | "openai" | "google"
 type SupportedChatModelDefinition = {
     id: string
     provider: SupportedProvider
-    pricing: ModelPrcing
+    pricing: ModelPricing
 }
 
 export const SUPPORTED_CHAT_MODELS = [

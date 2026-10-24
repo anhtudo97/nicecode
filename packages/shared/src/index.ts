@@ -1,5 +1,5 @@
 export {
-    type ModelPrcing,
+    type ModelPricing,
     type SupportedProvider,
     type SupportedChatModel,
     type SupportedChatModelId,
