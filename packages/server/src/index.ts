@@ -4,6 +4,8 @@ import { Hono } from "hono"
 import { HTTPException } from "hono/http-exception"
 import session from "./routes/session"
 import chat from "./routes/chat"
+import auth from "./routes/auth"
+import { requireAuth } from "./middleware/require-auth"
 
 const app = new Hono()
 
@@ -51,7 +53,10 @@ app.onError((error, c) => {
     })
 })
 
-const routes = app.route("/session", session).route("/chat", chat)
+app.use("/session/*", requireAuth)
+app.use("/chat/*", requireAuth)
+
+const routes = app.route("/session", session).route("/chat", chat).route("/auth", auth)
 
 export type AppType = typeof routes
 

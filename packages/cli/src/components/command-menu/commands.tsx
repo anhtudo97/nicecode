@@ -1,13 +1,16 @@
-import { Text } from "@/components/ui/primitives"
-import {
-    SessionDialogContent,
-    ThemeDialogContent,
-    AgentsDialogContent,
-    ModelsDialogContent
-} from "@/dialogs"
-import type { Command } from "./types"
-import { Mode } from "@nicecode/database"
 import { SUPPORTED_CHAT_MODELS } from "@nicecode/shared"
+import {
+    AgentsDialogContent,
+    ModelsDialogContent,
+    SessionDialogContent,
+    ThemeDialogContent
+} from "@/dialogs"
+import { clearAuth } from "@/lib/auth"
+import { performLogin } from "@/lib/oauth"
+import type { Command } from "./types"
+
+// Prevents a second /login from starting another callback server while one is pending
+let loginInProgress = false
 
 export const COMMANDS: Command[] = [
     {
@@ -20,25 +23,25 @@ export const COMMANDS: Command[] = [
     },
     {
         name: "agents",
-        description: "Manage your agents",
+        description: "Switch agents",
         value: "/agents",
         action: (ctx) => {
             ctx.dialog.open({
-                title: "Select Agents",
+                title: "Select Agent",
                 children: <AgentsDialogContent currentMode={ctx.mode} onSelectMode={ctx.setMode} />
             })
         }
     },
     {
         name: "models",
-        description: "Manage your models",
+        description: "Select AI model for generation",
         value: "/models",
         action: (ctx) => {
             ctx.dialog.open({
-                title: "Select Models",
+                title: "Select Model",
                 children: (
                     <ModelsDialogContent
-                        models={SUPPORTED_CHAT_MODELS.map((m) => m.id)}
+                        models={SUPPORTED_CHAT_MODELS.map((model) => model.id)}
                         onSelectModel={ctx.setModel}
                     />
                 )
@@ -47,7 +50,7 @@ export const COMMANDS: Command[] = [
     },
     {
         name: "sessions",
-        description: "Manage your sessions",
+        description: "Browse past sessions",
         value: "/sessions",
         action: (ctx) => {
             ctx.dialog.open({
@@ -58,50 +61,69 @@ export const COMMANDS: Command[] = [
     },
     {
         name: "theme",
-        description: "Change the application theme",
+        description: "Change color theme",
         value: "/theme",
         action: (ctx) => {
             ctx.dialog.open({
-                title: "Change Theme",
+                title: "Select Theme",
                 children: <ThemeDialogContent />
             })
         }
     },
     {
         name: "login",
-        description: "Log in to the application",
+        description: "Sign in with your browser",
         value: "/login",
-        action: (ctx) => {
-            ctx.toast.show({ message: "Logging in ...", variant: "info" })
+        action: async (ctx) => {
+            if (loginInProgress) {
+                ctx.toast.show({ message: "Sign in already in progress" })
+                return
+            }
+
+            loginInProgress = true
+            ctx.toast.show({ message: "Opening browser to sign in..." })
+
+            try {
+                await performLogin()
+                ctx.toast.show({ variant: "success", message: "Signed in" })
+            } catch (error) {
+                const message =
+                    error instanceof Error ? error.message : "Sign in failed or timed out"
+
+                ctx.toast.show({ variant: "error", message })
+            } finally {
+                loginInProgress = false
+            }
         }
     },
     {
         name: "logout",
-        description: "Log out of the application",
+        description: "Sign out of your account",
         value: "/logout",
         action: (ctx) => {
-            ctx.toast.show({ message: "Logging out ...", variant: "info" })
+            clearAuth()
+            ctx.toast.show({ variant: "success", message: "Signed out" })
         }
     },
     {
         name: "upgrade",
-        description: "Upgrade the application",
+        description: "Buy more credits",
         value: "/upgrade",
         action: (ctx) => {
-            ctx.toast.show({ message: "Upgrading the application ...", variant: "info" })
+            ctx.toast.show({ message: "Opening credits checkout..." })
         }
     },
     {
         name: "usage",
-        description: "Show usage information",
+        description: "Open billing portal in your browser",
         value: "/usage",
         action: (ctx) => {
-            ctx.toast.show({ message: "Showing usage information ...", variant: "info" })
+            ctx.toast.show({ message: "Opening billing portal..." })
         }
     },
     {
         name: "exit",
-        description: "Exit the application",
+        description: "Quit the application",
         value: "/exit",
         action: (ctx) => {
             ctx.exit()

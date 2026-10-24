@@ -5,6 +5,7 @@ import { findSupportedChatModelById } from "@nicecode/shared"
 import * as Sentry from "@sentry/hono/bun"
 import { Hono } from "hono"
 import z from "zod"
+import type { AuthenticatedEnv } from "../middleware/require-auth"
 
 const createSessionSchema = z.object({
     title: z.string(),
@@ -27,9 +28,11 @@ const createSessionValidator = zValidator("json", createSessionSchema, (result, 
     }
 })
 
-const app = new Hono()
+const app = new Hono<AuthenticatedEnv>()
     .get("/", async (c) => {
+        const userId = c.get("userId")
         const sessions = await db.session.findMany({
+            where: { userId },
             orderBy: { createdAt: "desc" },
             select: {
                 id: true,
@@ -50,8 +53,9 @@ const app = new Hono()
         // throw new HTTPException(500, { message: "Internal Server Error" })
 
         const id = c.req.param("id")
+        const userId = c.get("userId")
         const session = await db.session.findUnique({
-            where: { id },
+            where: { id, userId },
             include: {
                 messages: {
                     orderBy: { createdAt: "asc" }
@@ -61,7 +65,7 @@ const app = new Hono()
         if (!session) {
             Sentry.logger.warn("Session not found", {
                 sessionId: id,
-                userId: "mock-user-id"
+                userId
             })
 
             return c.json({ error: "Session not found" }, 404)
@@ -79,12 +83,13 @@ const app = new Hono()
 
         // throw new HTTPException(500, { message: "Internal Server Error" })
 
+        const userId = c.get("userId")
         const { initialMessage, ...data } = c.req.valid("json")
 
         const session = await db.session.create({
             data: {
                 ...data,
-                userId: "mock-user-id",
+                userId,
                 ...(initialMessage && {
                     messages: {
                         create: {
