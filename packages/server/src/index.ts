@@ -5,6 +5,8 @@ import { HTTPException } from "hono/http-exception"
 import session from "./routes/session"
 import chat from "./routes/chat"
 import auth from "./routes/auth"
+import billing from "./routes/billing"
+
 import { requireAuth } from "./middleware/require-auth"
 
 const app = new Hono()
@@ -55,8 +57,14 @@ app.onError((error, c) => {
 
 app.use("/session/*", requireAuth)
 app.use("/chat/*", requireAuth)
+app.use("/billing/checkout", requireAuth)
+app.use("/billing/portal", requireAuth)
 
-const routes = app.route("/session", session).route("/chat", chat).route("/auth", auth)
+const routes = app
+    .route("/session", session)
+    .route("/chat", chat)
+    .route("/auth", auth)
+    .route("/billing", billing)
 
 export type AppType = typeof routes
 
