@@ -6,6 +6,7 @@ import * as Sentry from "@sentry/hono/bun"
 import { Hono } from "hono"
 import z from "zod"
 import type { AuthenticatedEnv } from "../middleware/require-auth"
+import { requireCreditsBalance } from "../middleware/require-credits-balance"
 
 const createSessionSchema = z.object({
     title: z.string(),
@@ -78,7 +79,7 @@ const app = new Hono<AuthenticatedEnv>()
 
         return c.json(session)
     })
-    .post("/", createSessionValidator, async (c) => {
+    .post("/", requireCreditsBalance, createSessionValidator, async (c) => {
         // await new Promise((resolve) => setTimeout(resolve, 5000))
 
         // throw new HTTPException(500, { message: "Internal Server Error" })
