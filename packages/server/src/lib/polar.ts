@@ -35,10 +35,17 @@ export function getPolarServer(): PolarServer {
     return server
 }
 
-const polar = createPolar({
-    accessToken: getPolarAccessToken(),
-    environment: getPolarServer()
-})
+// Created lazily so a missing POLAR_* env var only fails billing routes,
+// not the whole server at import time.
+let polarClient: ReturnType<typeof createPolar> | undefined
+
+function getPolar() {
+    polarClient ??= createPolar({
+        accessToken: getPolarAccessToken(),
+        environment: getPolarServer()
+    })
+    return polarClient
+}
 
 function hasStatusCode(error: unknown): error is { statusCode: number } {
     return (
@@ -58,7 +65,7 @@ export async function createCheckoutUrl({
     customerExternalId,
     requestUrl
 }: CreateCheckoutUrlParams) {
-    const result = await polar.checkouts.create({
+    const result = await getPolar().checkouts.create({
         products: [getPolarProductId()],
         success_url: new URL("/billing/success", requestUrl).toString(),
         external_customer_id: customerExternalId,
@@ -72,7 +79,7 @@ export async function createCustomerPortalUrl({
     customerExternalId,
     requestUrl
 }: CreateCheckoutUrlParams) {
-    const result = await polar.customerSessions.create({
+    const result = await getPolar().customerSessions.create({
         external_customer_id: customerExternalId,
         return_url: new URL("/billing/success", requestUrl).toString()
     })
@@ -82,7 +89,7 @@ export async function createCustomerPortalUrl({
 
 export async function getAvailableCreditsBalance(customerExternalId: string) {
     try {
-        const customerState = await polar.customers.getStateExternal(customerExternalId)
+        const customerState = await getPolar().customers.getStateExternal(customerExternalId)
 
         const matchingMeters = customerState.active_meters.filter(
             (meter) => meter.meter_id === getPolarCreditsMeterId()
@@ -114,7 +121,7 @@ export async function ingestAiUsage({ externalCustomerId, eventId, credits }: In
         return
     }
 
-    await polar.events.ingest({
+    await getPolar().events.ingest({
         events: [
             {
                 name: "nightcode_usage",

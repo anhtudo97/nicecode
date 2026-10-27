@@ -17,7 +17,6 @@ import { buildSystemPrompt } from "../system-prompt"
 import { isSupportedChatModel, resolveChatModel } from "../lib/models"
 import type { AuthenticatedEnv } from "../middleware/require-auth"
 
-import type { LanguageModelUsage } from "ai"
 import { requireCreditsBalance } from "../middleware/require-credits-balance"
 import { ingestAiUsage } from "../lib/polar"
 import { calculateCreditsForUsage } from "../lib/credits"
@@ -91,7 +90,9 @@ async function streamAIResponse(
     const tools = cwd ? createTools(cwd, mode) : undefined
     const parts: MessagePart[] = []
     const resolvedModel = resolveChatModel(model)
-    let completedUsage: LanguageModelUsage | null = null
+    // Usage is summed per finished step so aborted/interrupted runs are still billed
+    // for the steps that completed, instead of relying on the final onEnd event.
+    const stepUsage = { inputTokens: 0, outputTokens: 0, steps: 0 }
     const persistInterruptedMessage = async () => {
         const fullText = parts
             .filter((p) => p.type === "text")
@@ -121,13 +122,13 @@ async function streamAIResponse(
     }
 
     const ingestUsageForMessage = async ({ messageId }: IngestUsageForMessageParams) => {
-        if (!completedUsage) return
+        if (stepUsage.steps === 0) return
 
         try {
             const billableUsage = calculateCreditsForUsage({
                 provider: resolvedModel.provider,
                 model: resolvedModel.modelId,
-                usage: completedUsage
+                usage: stepUsage
             })
 
             await ingestAiUsage({
@@ -163,14 +164,17 @@ async function streamAIResponse(
             tools,
             stopWhen: tools ? isStepCount(50) : undefined,
             abortSignal: abortController.signal,
-            providerOptions: resolvedModel.providerOptions,
-            onEnd(event) {
-                completedUsage = event.usage
-            }
+            providerOptions: resolvedModel.providerOptions
         })
 
         for await (const part of result.stream) {
             if (stream.aborted) break
+
+            if (part.type === "finish-step") {
+                stepUsage.inputTokens += part.usage.inputTokens ?? 0
+                stepUsage.outputTokens += part.usage.outputTokens ?? 0
+                stepUsage.steps += 1
+            }
 
             if (part.type === "reasoning-delta") {
                 const last = parts[parts.length - 1]

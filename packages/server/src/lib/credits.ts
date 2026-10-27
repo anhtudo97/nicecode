@@ -5,10 +5,12 @@ import {
 } from "@nicecode/shared"
 import type { LanguageModelUsage } from "ai"
 
+type TokenUsage = Pick<LanguageModelUsage, "inputTokens" | "outputTokens">
+
 type CalculateCreditsForUsageParams = {
     provider: string
     model: string
-    usage: LanguageModelUsage
+    usage: TokenUsage
 }
 
 type BillableUsage = {
@@ -27,7 +29,7 @@ const TOKENS_PER_MILLION = 1_000_000
 // this constant if product wants a finer unit like 0.001 or a coarser one.
 const USD_PER_CREDIT = 0.01
 
-function getTokenCounts(usage: LanguageModelUsage): TokenCounts {
+function getTokenCounts(usage: TokenUsage): TokenCounts {
     const inputTokens = usage.inputTokens
     const outputTokens = usage.outputTokens
 
