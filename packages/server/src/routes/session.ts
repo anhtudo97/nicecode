@@ -6,7 +6,7 @@ import type { AuthenticatedEnv } from "../middleware/require-auth"
 import { requireCreditsBalance } from "../middleware/require-credits-balance"
 
 const createSessionSchema = z.object({
-    title: z.string()
+    title: z.string().max(200)
 })
 
 const createSessionValidator = zValidator("json", createSessionSchema, (result, c) => {

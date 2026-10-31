@@ -38,7 +38,8 @@ const submitSchema = z.object({
                 )
             })
         )
-        .min(1),
+        .min(1)
+        .max(200),
     mode: modeSchema,
     model: z.string().refine(isSupportedChatModel, "Unsupported model")
 })
@@ -96,9 +97,25 @@ const app = new Hono<AuthenticatedEnv>().post(
 
             if (existingMessageIndex === -1) {
                 mergedMessages.push(incomingMessage)
-            } else {
-                mergedMessages[existingMessageIndex] = incomingMessage
+                continue
             }
+
+            const existingMessage = mergedMessages[existingMessageIndex]!
+
+            // Stored history is server-owned: the only legitimate rewrite is the client resending
+            // the trailing assistant message with tool outputs filled in. Anything else could
+            // forge earlier turns, so reject it.
+            const isTrailingAssistant =
+                existingMessageIndex === previousMessages.length - 1 &&
+                existingMessage.role === "assistant" &&
+                incomingMessage.role === "assistant"
+
+            if (!isTrailingAssistant) {
+                if (JSON.stringify(existingMessage) === JSON.stringify(incomingMessage)) continue
+                return c.json({ error: "Cannot modify existing messages" }, 400)
+            }
+
+            mergedMessages[existingMessageIndex] = incomingMessage
         }
 
         const nextMessages = await validateUIMessages<NicecodeUIMessage>({
@@ -138,6 +155,33 @@ const app = new Hono<AuthenticatedEnv>().post(
             async onFinish(event) {
                 if (event.isAborted) return
 
+                // Bill every request, including ones that end in a client-side tool call: the
+                // model tokens were already spent. The continuation after the tool result reuses
+                // the same response message id, so the part count keeps each event id unique
+                // (Polar dedups on external_id).
+                if (completedUsage) {
+                    try {
+                        const billableUsage = calculateCreditsForUsage({
+                            provider: resolvedModel.provider,
+                            model: resolvedModel.modelId,
+                            usage: completedUsage
+                        })
+
+                        await ingestAiUsage({
+                            externalCustomerId: userId,
+                            eventId: `chat-message:${event.responseMessage.id}:${event.responseMessage.parts.length}`,
+                            credits: billableUsage.credits
+                        })
+                    } catch (error) {
+                        console.error("Failed to ingest Polar AI usage for chat message", {
+                            error,
+                            sessionId: id,
+                            messageId: event.responseMessage.id,
+                            userId
+                        })
+                    }
+                }
+
                 if (hasPendingToolCalls(event.responseMessage)) return
 
                 await db.session.update({
@@ -146,32 +190,10 @@ const app = new Hono<AuthenticatedEnv>().post(
                         messages: event.messages as unknown as Prisma.InputJsonValue
                     }
                 })
-
-                if (!completedUsage) return
-
-                try {
-                    const billableUsage = calculateCreditsForUsage({
-                        provider: resolvedModel.provider,
-                        model: resolvedModel.modelId,
-                        usage: completedUsage
-                    })
-
-                    await ingestAiUsage({
-                        externalCustomerId: userId,
-                        eventId: `chat-message:${event.responseMessage.id}`,
-                        credits: billableUsage.credits
-                    })
-                } catch (error) {
-                    console.error("Failed to ingest Polar AI usage for chat message", {
-                        error,
-                        sessionId: id,
-                        messageId: event.responseMessage.id,
-                        userId
-                    })
-                }
             },
             onError(error) {
-                return error instanceof Error ? error.message : String(error)
+                console.error("Chat stream failed", { error, sessionId: id, userId })
+                return "The model request failed. Please try again."
             }
         })
     }

@@ -1,4 +1,4 @@
-import { mkdir, readFile, readdir, stat, writeFile } from "fs/promises"
+import { mkdir, readFile, readdir, realpath, stat, writeFile } from "fs/promises"
 import { dirname, isAbsolute, join, relative, resolve } from "path"
 import { toolInputSchemas, Mode, type ModeType } from "@nicecode/shared"
 
@@ -8,12 +8,45 @@ const MAX_MATCHES = 50
 const MAX_OUTPUT = 20_000
 const DEFAULT_TIMEOUT = 30_000
 
-function resolveInsideCwd(path: string) {
+const SENSITIVE_ENV_PATTERN = /key|token|secret|password|credential|database_url|^clerk_|^polar_/i
+
+// The model controls the command, so don't hand it the CLI's own credentials.
+function getSafeEnv() {
+    const env: Record<string, string | undefined> = { TERM: "dumb" }
+
+    for (const [name, value] of Object.entries(process.env)) {
+        if (!SENSITIVE_ENV_PATTERN.test(name)) env[name] = value
+    }
+
+    env.TERM = "dumb"
+    return env
+}
+
+function isInside(cwd: string, target: string) {
+    const rel = relative(cwd, target)
+    return !(rel.startsWith("..") || isAbsolute(rel))
+}
+
+// Real path of the nearest existing ancestor, so symlinks can't point outside the project
+// (the target itself may not exist yet, e.g. writeFile).
+async function realpathOfExistingAncestor(target: string): Promise<string> {
+    try {
+        return await realpath(target)
+    } catch {
+        const parent = dirname(target)
+        if (parent === target) return target
+        return join(await realpathOfExistingAncestor(parent), relative(parent, target))
+    }
+}
+
+async function resolveInsideCwd(path: string) {
     const cwd = process.cwd()
     const resolved = resolve(cwd, path)
-    const rel = relative(cwd, resolved)
 
-    if (rel.startsWith("..") || isAbsolute(rel)) {
+    if (
+        !isInside(cwd, resolved) ||
+        !isInside(await realpath(cwd), await realpathOfExistingAncestor(resolved))
+    ) {
         throw new Error("Path is outside the project directory")
     }
 
@@ -34,7 +67,7 @@ export async function executeLocalTool(toolName: string, input: unknown, mode: M
     switch (toolName) {
         case "readFile": {
             const { path } = toolInputSchemas.readFile.parse(input)
-            const { resolved } = resolveInsideCwd(path)
+            const { resolved } = await resolveInsideCwd(path)
             const content = await readFile(resolved, "utf-8")
             return content.length > MAX_FILE_SIZE
                 ? {
@@ -46,7 +79,7 @@ export async function executeLocalTool(toolName: string, input: unknown, mode: M
         }
         case "listDirectory": {
             const { path } = toolInputSchemas.listDirectory.parse(input)
-            const { cwd, resolved } = resolveInsideCwd(path)
+            const { cwd, resolved } = await resolveInsideCwd(path)
             const entries = await readdir(resolved)
             const results: { name: string; type: "file" | "directory" }[] = []
 
@@ -63,7 +96,7 @@ export async function executeLocalTool(toolName: string, input: unknown, mode: M
         }
         case "glob": {
             const { pattern, path } = toolInputSchemas.glob.parse(input)
-            const { cwd, resolved } = resolveInsideCwd(path)
+            const { cwd, resolved } = await resolveInsideCwd(path)
             const glob = new Bun.Glob(pattern)
             const files: string[] = []
             let truncated = false
@@ -82,7 +115,7 @@ export async function executeLocalTool(toolName: string, input: unknown, mode: M
         }
         case "grep": {
             const { pattern, path, include } = toolInputSchemas.grep.parse(input)
-            const { cwd, resolved } = resolveInsideCwd(path)
+            const { cwd, resolved } = await resolveInsideCwd(path)
             const args = [
                 "-rn",
                 "--color=never",
@@ -91,7 +124,8 @@ export async function executeLocalTool(toolName: string, input: unknown, mode: M
                 "-E"
             ]
             if (include) args.push(`--include=${include}`)
-            args.push(pattern, resolved)
+            // -e/-- keep a model-supplied pattern or path from being parsed as an option
+            args.push("-e", pattern, "--", resolved)
 
             const proc = Bun.spawn(["grep", ...args], { cwd, stdout: "pipe", stderr: "pipe" })
             const [stdout, stderr] = await Promise.all([
@@ -129,7 +163,7 @@ export async function executeLocalTool(toolName: string, input: unknown, mode: M
         }
         case "writeFile": {
             const { path, content } = toolInputSchemas.writeFile.parse(input)
-            const { cwd, resolved } = resolveInsideCwd(path)
+            const { cwd, resolved } = await resolveInsideCwd(path)
             await mkdir(dirname(resolved), { recursive: true })
             await writeFile(resolved, content, "utf-8")
             return {
@@ -140,7 +174,7 @@ export async function executeLocalTool(toolName: string, input: unknown, mode: M
         }
         case "editFile": {
             const { path, oldString, newString } = toolInputSchemas.editFile.parse(input)
-            const { cwd, resolved } = resolveInsideCwd(path)
+            const { cwd, resolved } = await resolveInsideCwd(path)
             const content = await readFile(resolved, "utf-8")
             const occurrences = content.split(oldString).length - 1
 
@@ -154,10 +188,10 @@ export async function executeLocalTool(toolName: string, input: unknown, mode: M
         case "bash": {
             const { command, timeout = DEFAULT_TIMEOUT } = toolInputSchemas.bash.parse(input)
             const proc = Bun.spawn(["bash", "-c", command], {
-                cwd: resolveInsideCwd(".").resolved,
+                cwd: (await resolveInsideCwd(".")).resolved,
                 stdout: "pipe",
                 stderr: "pipe",
-                env: { ...process.env, TERM: "dumb" }
+                env: getSafeEnv()
             })
             const timer = setTimeout(() => proc.kill(), timeout)
             const [stdout, stderr] = await Promise.all([
