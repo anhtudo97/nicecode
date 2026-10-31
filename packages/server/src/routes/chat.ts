@@ -3,7 +3,9 @@ import { zValidator } from "@hono/zod-validator"
 import { z } from "zod"
 import {
     convertToModelMessages,
+    createUIMessageStreamResponse,
     streamText,
+    toUIMessageStream,
     validateUIMessages,
     type InferUITools,
     type LanguageModelUsage,
@@ -131,12 +133,14 @@ const app = new Hono<AuthenticatedEnv>().post(
             messages: modelMessages,
             tools,
             providerOptions: resolvedModel.providerOptions,
-            onFinish(event) {
-                completedUsage = event.totalUsage
+            onEnd(event) {
+                completedUsage = event.usage
             }
         })
 
-        return result.toUIMessageStreamResponse<NicecodeUIMessage>({
+        const stream = toUIMessageStream<typeof tools, NicecodeUIMessage>({
+            stream: result.stream,
+            tools,
             originalMessages: nextMessages,
             messageMetadata({ part }) {
                 if (part.type === "start") {
@@ -152,7 +156,7 @@ const app = new Hono<AuthenticatedEnv>().post(
                     ...(completedUsage ? { usage: completedUsage } : {})
                 }
             },
-            async onFinish(event) {
+            async onEnd(event) {
                 if (event.isAborted) return
 
                 // Bill every request, including ones that end in a client-side tool call: the
@@ -196,6 +200,8 @@ const app = new Hono<AuthenticatedEnv>().post(
                 return "The model request failed. Please try again."
             }
         })
+
+        return createUIMessageStreamResponse({ stream })
     }
 )
 
