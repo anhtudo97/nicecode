@@ -18,16 +18,6 @@ app.use(
     })
 )
 
-app.get("/debug-sentry", () => {
-    // Send a log before throwing the error
-    Sentry.logger.info("User triggered test error", {
-        action: "test_error_endpoint"
-    })
-    // Send a test metric before throwing the error
-    Sentry.metrics.count("test_counter", 1)
-    throw new Error("My first Sentry error!")
-})
-
 app.onError((error, c) => {
     if (error instanceof HTTPException) {
         Sentry.logger.warn("Handled HTTP Error", {
@@ -50,9 +40,12 @@ app.onError((error, c) => {
         method: c.req.method,
         message: error.message || "Internal Server Error"
     })
-    return c.json({
-        error: "Internal Server Error"
-    })
+    return c.json(
+        {
+            error: "Internal Server Error"
+        },
+        500
+    )
 })
 
 app.use("/session/*", requireAuth)
