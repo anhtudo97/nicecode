@@ -1,21 +1,23 @@
 import { TextAttributes } from "@opentui/core"
-import { Box, Text } from "./ui/primitives"
-import { useTheme } from "@/providers/theme"
-import { usePromptConfig } from "@/providers/prompt-config"
-import { Mode } from "@nicecode/database/enums"
+import { useTheme } from "../providers/theme"
+import { usePromptConfig } from "../providers/prompt-config"
+import { Mode } from "@nicecode/shared"
+import { Box, Text } from "@/components/ui/primitives"
 
-export function StatusBar() {
-    const { colors } = useTheme()
+export const StatusBar = () => {
     const { mode, model } = usePromptConfig()
+    const { colors } = useTheme()
+
     return (
         <Box flexDirection="row" gap={1}>
             <Text fg={mode === Mode.PLAN ? colors.planMode : colors.primary}>
-                {mode === "BUILD" ? "Build" : "Plan"}
+                {mode === Mode.PLAN ? "Plan" : "Build"}
             </Text>
+
             <Text attributes={TextAttributes.DIM} fg={colors.dimSeparator}>
-                {"›"}
+                ›
             </Text>
-            <Text>{model}</Text>
+            <text>{model}</text>
         </Box>
     )
 }

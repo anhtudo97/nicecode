@@ -1,12 +1,12 @@
 import "opentui-spinner/react"
-import { useTheme } from "@/providers/theme"
-import { Mode } from "@nicecode/database/enums"
+import { Mode, type ModeType } from "@nicecode/shared"
+import { useTheme } from "../providers/theme"
 
 type Props = {
-    mode?: Mode
+    mode?: ModeType
 }
 
-export const Spinner = ({ mode }: Props) => {
+export const Spinner = ({ mode = Mode.BUILD }: Props) => {
     const { colors } = useTheme()
     const activeColor = mode === Mode.PLAN ? colors.planMode : colors.primary
 
