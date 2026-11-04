@@ -53,13 +53,51 @@ async function resolveInsideCwd(path: string) {
     return { cwd, resolved }
 }
 
-function truncate(value: string, limit: number) {
-    return value.length > limit
-        ? `${value.slice(0, limit)}\n... (truncated, ${value.length} total chars)`
-        : value
+// Fires on timeout or when the user interrupts, whichever comes first.
+function withTimeout(timeoutMs: number, abortSignal?: AbortSignal) {
+    const timeoutSignal = AbortSignal.timeout(timeoutMs)
+    const signal = abortSignal ? AbortSignal.any([timeoutSignal, abortSignal]) : timeoutSignal
+    return { signal, timeoutSignal }
 }
 
-export async function executeLocalTool(toolName: string, input: unknown, mode: ModeType) {
+// Reads a process stream while keeping at most `limit` chars, so a chatty command can't
+// exhaust memory. It still drains the rest so the process never blocks on a full pipe.
+function collectCapped(stream: ReadableStream<Uint8Array>, limit: number) {
+    const reader = stream.getReader()
+    const decoder = new TextDecoder()
+    let text = ""
+    let total = 0
+
+    const done = (async () => {
+        try {
+            for (;;) {
+                const { value, done } = await reader.read()
+                if (done) break
+                const chunk = decoder.decode(value, { stream: true })
+                total += chunk.length
+                if (text.length < limit) text += chunk.slice(0, limit - text.length)
+            }
+        } catch {
+            // Cancelled while draining; keep what was collected
+        }
+    })()
+
+    return {
+        done,
+        cancel: () => void reader.cancel().catch(() => {}),
+        result: () => (total > limit ? `${text}\n... (truncated, ${total} total chars)` : text)
+    }
+}
+
+// Tools that change files or run commands; the CLI asks the user before running these.
+export const TOOLS_REQUIRING_APPROVAL = ["writeFile", "editFile", "bash"]
+
+export async function executeLocalTool(
+    toolName: string,
+    input: unknown,
+    mode: ModeType,
+    abortSignal?: AbortSignal
+) {
     if (mode === Mode.PLAN && !["readFile", "listDirectory", "glob", "grep"].includes(toolName)) {
         throw new Error(`Tool ${toolName} is not available in PLAN mode`)
     }
@@ -85,8 +123,9 @@ export async function executeLocalTool(toolName: string, input: unknown, mode: M
 
             for (const entry of entries) {
                 if (entry.startsWith(".") || entry === "node_modules") continue
-                const info = await stat(join(resolved, entry))
-                results.push({ name: entry, type: info.isDirectory() ? "directory" : "file" })
+                // A dangling symlink can't be stat'ed; list it as a file instead of failing
+                const info = await stat(join(resolved, entry)).catch(() => null)
+                results.push({ name: entry, type: info?.isDirectory() ? "directory" : "file" })
             }
 
             results.sort((a, b) =>
@@ -127,7 +166,12 @@ export async function executeLocalTool(toolName: string, input: unknown, mode: M
             // -e/-- keep a model-supplied pattern or path from being parsed as an option
             args.push("-e", pattern, "--", resolved)
 
-            const proc = Bun.spawn(["grep", ...args], { cwd, stdout: "pipe", stderr: "pipe" })
+            const proc = Bun.spawn(["grep", ...args], {
+                cwd,
+                stdout: "pipe",
+                stderr: "pipe",
+                signal: withTimeout(DEFAULT_TIMEOUT, abortSignal).signal
+            })
             const [stdout, stderr] = await Promise.all([
                 new Response(proc.stdout).text(),
                 new Response(proc.stderr).text()
@@ -182,28 +226,40 @@ export async function executeLocalTool(toolName: string, input: unknown, mode: M
             if (occurrences > 1)
                 throw new Error(`oldString is ambiguous; found ${occurrences} matches`)
 
-            await writeFile(resolved, content.replace(oldString, newString), "utf-8")
+            // Replacer fn: a plain string would expand "$&", "$$", "$`" in newString
+            await writeFile(
+                resolved,
+                content.replace(oldString, () => newString),
+                "utf-8"
+            )
             return { success: true as const, path: relative(cwd, resolved) }
         }
         case "bash": {
             const { command, timeout = DEFAULT_TIMEOUT } = toolInputSchemas.bash.parse(input)
+            const { signal, timeoutSignal } = withTimeout(timeout, abortSignal)
             const proc = Bun.spawn(["bash", "-c", command], {
                 cwd: (await resolveInsideCwd(".")).resolved,
                 stdout: "pipe",
                 stderr: "pipe",
-                env: getSafeEnv()
+                env: getSafeEnv(),
+                // Kills bash on timeout or interrupt
+                signal
             })
-            const timer = setTimeout(() => proc.kill(), timeout)
-            const [stdout, stderr] = await Promise.all([
-                new Response(proc.stdout).text(),
-                new Response(proc.stderr).text()
-            ])
+            const stdout = collectCapped(proc.stdout, MAX_OUTPUT)
+            const stderr = collectCapped(proc.stderr, MAX_OUTPUT)
             const exitCode = await proc.exited
-            clearTimeout(timer)
+
+            // A background grandchild can keep the pipes open after bash exits; don't wait for it
+            await Promise.race([Promise.all([stdout.done, stderr.done]), Bun.sleep(500)])
+            stdout.cancel()
+            stderr.cancel()
+
+            if (abortSignal?.aborted) throw new Error("Command was interrupted")
             return {
-                stdout: truncate(stdout, MAX_OUTPUT),
-                stderr: truncate(stderr, MAX_OUTPUT),
-                exitCode
+                stdout: stdout.result(),
+                stderr: stderr.result(),
+                exitCode,
+                ...(timeoutSignal.aborted ? { timedOut: true } : {})
             }
         }
         default:

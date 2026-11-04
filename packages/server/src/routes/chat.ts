@@ -52,17 +52,6 @@ const submitValidator = zValidator("json", submitSchema, (result, c) => {
     }
 })
 
-function hasPendingToolCalls(message: NicecodeUIMessage) {
-    return message.parts.some((part) => {
-        if (part.type === "dynamic-tool" || part.type.startsWith("tool-")) {
-            const state = (part as { state?: string }).state
-            return state !== "output-available" && state !== "output-error"
-        }
-
-        return false
-    })
-}
-
 const app = new Hono<AuthenticatedEnv>().post(
     "/",
     requireCreditsBalance,
@@ -105,26 +94,33 @@ const app = new Hono<AuthenticatedEnv>().post(
             const existingMessage = mergedMessages[existingMessageIndex]!
 
             // Stored history is server-owned: the only legitimate rewrite is the client resending
-            // the trailing assistant message with tool outputs filled in. Anything else could
-            // forge earlier turns, so reject it.
+            // the trailing assistant message with tool outputs filled in.
             const isTrailingAssistant =
                 existingMessageIndex === previousMessages.length - 1 &&
                 existingMessage.role === "assistant" &&
                 incomingMessage.role === "assistant"
 
-            if (!isTrailingAssistant) {
-                if (JSON.stringify(existingMessage) === JSON.stringify(incomingMessage)) continue
-                return c.json({ error: "Cannot modify existing messages" }, 400)
-            }
+            // The server copy wins: the client re-sends the user message that opened a turn it
+            // already saved, and a rewrite of anything older is ignored rather than trusted.
+            if (!isTrailingAssistant) continue
 
             mergedMessages[existingMessageIndex] = incomingMessage
         }
 
-        const nextMessages = await validateUIMessages<NicecodeUIMessage>({
-            messages: mergedMessages,
-            tools
+        let nextMessages: NicecodeUIMessage[]
+        try {
+            nextMessages = await validateUIMessages<NicecodeUIMessage>({
+                messages: mergedMessages,
+                tools
+            })
+        } catch {
+            return c.json({ error: "Invalid messages" }, 400)
+        }
+        // Tool calls the user interrupted never got an output; drop them instead of failing
+        const modelMessages = await convertToModelMessages(nextMessages, {
+            tools,
+            ignoreIncompleteToolCalls: true
         })
-        const modelMessages = await convertToModelMessages(nextMessages, { tools })
         let completedUsage: LanguageModelUsage | null = null
 
         const result = streamText({
@@ -186,14 +182,24 @@ const app = new Hono<AuthenticatedEnv>().post(
                     }
                 }
 
-                if (hasPendingToolCalls(event.responseMessage)) return
-
-                await db.session.update({
-                    where: { id, userId },
+                // Saved even while client-side tool calls are pending, so an interrupted turn
+                // keeps its user message; the client later re-sends the trailing assistant
+                // message with outputs filled in.
+                // The history is one JSON blob, so a concurrent request on the same session would
+                // overwrite this one. Only write if nobody saved since we loaded it.
+                const saved = await db.session.updateMany({
+                    where: { id, userId, updatedAt: session.updatedAt },
                     data: {
                         messages: event.messages as unknown as Prisma.InputJsonValue
                     }
                 })
+
+                if (saved.count === 0) {
+                    console.error("Chat history not saved: session changed during the request", {
+                        sessionId: id,
+                        userId
+                    })
+                }
             },
             onError(error) {
                 console.error("Chat stream failed", { error, sessionId: id, userId })

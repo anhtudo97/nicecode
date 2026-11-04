@@ -4,7 +4,7 @@ import { useKeyboardLayer } from "@/providers/keyboard-layer"
 import { RGBA, TextAttributes } from "@opentui/core"
 import { useKeyboard, useTerminalDimensions } from "@opentui/react"
 import { useTheme } from "@/providers/theme"
-import { createContext, useCallback, useContext, useMemo, useState } from "react"
+import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react"
 
 export type DialogContextValue = {
     open: (config: DialogConfig) => void
@@ -29,13 +29,21 @@ export const DialogProvider = ({ children }: DialogProviderProps) => {
     const [currentDialog, setCurrentDialog] = useState<DialogConfig | null>(null)
     const { pop, push } = useKeyboardLayer()
 
+    const currentRef = useRef<DialogConfig | null>(null)
+
     const close = useCallback(() => {
+        const closing = currentRef.current
+        currentRef.current = null
         setCurrentDialog(null)
         pop("dialog")
+        closing?.onClose?.()
     }, [pop])
 
     const open = useCallback(
         (config: DialogConfig) => {
+            // Opening over another dialog replaces it, so tell the old one it is gone
+            currentRef.current?.onClose?.()
+            currentRef.current = config
             setCurrentDialog(config)
             push("dialog", () => {
                 close()
