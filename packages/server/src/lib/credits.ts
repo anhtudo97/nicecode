@@ -1,8 +1,4 @@
-import {
-    SUPPORTED_CHAT_MODELS,
-    findSupportedChatModelById,
-    type ModelPricing
-} from "@nicecode/shared"
+import { SUPPORTED_CHAT_MODELS, findSupportedChatModel, type ModelPricing } from "@nicecode/shared"
 import type { LanguageModelUsage } from "ai"
 
 type TokenUsage = Pick<LanguageModelUsage, "inputTokens" | "outputTokens">
@@ -53,7 +49,7 @@ function getTokenCounts(usage: TokenUsage): TokenCounts {
 }
 
 function getModelPricing(provider: string, model: string): ModelPricing {
-    const supportedModel = findSupportedChatModelById(model)
+    const supportedModel = findSupportedChatModel(model)
 
     if (!supportedModel || supportedModel.provider !== provider) {
         if (!SUPPORTED_CHAT_MODELS.some((supportedModel) => supportedModel.provider === provider)) {
