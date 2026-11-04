@@ -44,6 +44,7 @@
         "db:down": "docker compose -f docker/docker-compose.yml down",
         "db:reset": "docker compose -f docker/docker-compose.yml down -v",
         "db:generate": "bun run --cwd packages/database db:generate",
-        "db:studio": "bun run --cwd packages/database db:studio"
+        "db:studio": "bun run --cwd packages/database db:studio",
+        "link:cli": "cd packages/cli && bun link && bun link @nicecode/cli --global"
     }
 }
