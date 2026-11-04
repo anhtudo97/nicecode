@@ -1,4 +1,4 @@
-import { EmptyBorder, SplitBorder } from "@/components/border"
+import { SplitBorder } from "@/components/border"
 import { Box, Text } from "@/components/ui/primitives"
 import { useTheme } from "@/providers/theme"
 import { TextAttributes } from "@opentui/core"

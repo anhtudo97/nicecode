@@ -1,15 +1,14 @@
-import type { ToastContextValue } from "@/providers/toast"
-import type { DialogContextValue } from "@/providers/dialog"
-import type { Mode } from "@nicecode/database/enums"
-import type { SupportedChatModelId } from "@nicecode/shared"
+import type { DialogContextValue } from "../../providers/dialog"
+import type { ToastContextValue } from "../../providers/toast"
+import type { ModeType, SupportedChatModelId } from "@nicecode/shared"
 
 export type CommandContext = {
     exit: () => void
     toast: ToastContextValue
     dialog: DialogContextValue
     navigate: (path: string) => void
-    mode: Mode
-    setMode: (mode: Mode) => void
+    mode: ModeType
+    setMode: (mode: ModeType) => void
     setModel: (model: SupportedChatModelId) => void
 }
 
@@ -17,5 +16,5 @@ export type Command = {
     name: string
     description: string
     value: string
-    action?: (ctx: CommandContext) => void
+    action?: (ctx: CommandContext) => void | Promise<void>
 }

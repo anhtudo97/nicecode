@@ -1,7 +1,7 @@
-import type { Mode } from "@nicecode/database"
+import type { ModeType } from "@nicecode/shared"
 
 type SystemPromptParams = {
-    mode: Mode
+    mode: ModeType
 }
 
 export function buildSystemPrompt({ mode }: SystemPromptParams): string {

@@ -1,11 +1,11 @@
-import { Box, Text } from "@/components/ui/primitives"
-import { Mode } from "@nicecode/database/enums"
+import { Box } from "@/components/ui/primitives"
+import { Mode, type ModeType } from "@nicecode/shared"
 import { useTheme } from "../../providers/theme"
 import { EmptyBorder } from "../border"
 
 type Props = {
     message: string
-    mode: Mode
+    mode: ModeType
 }
 
 export function UserMessage({ message, mode }: Props) {
@@ -30,7 +30,7 @@ export function UserMessage({ message, mode }: Props) {
                     backgroundColor={colors.surface}
                     width="100%"
                 >
-                    <Text>{message}</Text>
+                    <text>{message}</text>
                 </Box>
             </Box>
         </Box>

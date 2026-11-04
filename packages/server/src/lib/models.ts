@@ -3,7 +3,7 @@ import { google, type GoogleLanguageModelOptions } from "@ai-sdk/google"
 import { openai, type OpenAILanguageModelResponsesOptions } from "@ai-sdk/openai"
 import type { ProviderOptions } from "@ai-sdk/provider-utils"
 import {
-    findSupportedChatModelById,
+    findSupportedChatModel,
     type SupportedChatModel,
     type SupportedChatModelId,
     type SupportedProvider
@@ -121,11 +121,11 @@ const resolveSupportedChatModel = (model: SupportedChatModel): ResolvedModel => 
 }
 
 export const isSupportedChatModel = (modelId: string): modelId is SupportedChatModelId => {
-    return findSupportedChatModelById(modelId) !== undefined
+    return findSupportedChatModel(modelId) !== undefined
 }
 
 export const resolveChatModel = (modelId: string): ResolvedModel => {
-    const model = findSupportedChatModelById(modelId)
+    const model = findSupportedChatModel(modelId)
     if (!model) {
         throw new Error(`Unsupported chat model: ${modelId}`)
     }

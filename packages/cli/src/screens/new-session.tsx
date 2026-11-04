@@ -1,20 +1,20 @@
-import { SessionShell } from "@/components/messages/session-shell"
-import { getErrorMessage } from "@/lib/http-error"
-import { Mode } from "@nicecode/database/enums"
+import { modeSchema } from "@nicecode/shared"
 import { useEffect, useMemo, useRef } from "react"
 import { useLocation, useNavigate } from "react-router"
 import { z } from "zod"
-import { UserMessage } from "../components/messages"
+import { UserMessage } from "@/components/messages"
 import { apiClient } from "../lib/api-client"
 import { useToast } from "../providers/toast"
+import { SessionShell } from "@/components/messages/session-shell"
+import { getErrorMessage } from "@/lib/http-error"
 
 const newSessionStateSchema = z.object({
     message: z.string(),
-    mode: z.enum(Mode),
+    mode: modeSchema,
     model: z.string()
 })
 
-export function NewSession() {
+export const NewSession = () => {
     const navigate = useNavigate()
     const location = useLocation()
     const toast = useToast()
@@ -43,14 +43,7 @@ export function NewSession() {
             try {
                 const res = await apiClient.session.$post({
                     json: {
-                        title: state.message.slice(0, 100),
-                        cwd: process.cwd(),
-                        initialMessage: {
-                            role: "USER",
-                            content: state.message,
-                            mode: state.mode,
-                            model: state.model
-                        }
+                        title: state.message.slice(0, 100)
                     }
                 })
 
@@ -59,7 +52,10 @@ export function NewSession() {
                     throw new Error(await getErrorMessage(res))
                 }
                 const session = await res.json()
-                navigate(`/sessions/${session.id}`, { replace: true, state: { session } })
+                navigate(`/sessions/${session.id}`, {
+                    replace: true,
+                    state: { session, initialPrompt: state }
+                })
             } catch (error) {
                 if (ignore) return
                 toast.show({

@@ -21,6 +21,7 @@ export const SessionShell = ({
     interruptible = false
 }: Props) => {
     const { mode } = usePromptConfig()
+
     return (
         <Box
             flexDirection="column"
@@ -31,11 +32,9 @@ export const SessionShell = ({
             paddingX={2}
             gap={1}
         >
-            {children ? (
-                <Scrollbox flexGrow={1} width="100%" stickyScroll stickyStart="bottom">
-                    <Box gap={1}>{children}</Box>
-                </Scrollbox>
-            ) : null}
+            <Scrollbox flexGrow={1} width="100%" stickyScroll stickyStart="bottom">
+                <Box>{children}</Box>
+            </Scrollbox>
             <Box flexShrink={0}>
                 <InputBar onSubmit={onSubmit} disabled={inputDisabled} />
             </Box>
@@ -56,6 +55,7 @@ export const SessionShell = ({
                         </>
                     ) : null}
                 </Box>
+
                 <Box flexDirection="row" gap={1} flexShrink={0} marginLeft="auto">
                     <Text>tab</Text>
                     <Text attributes={TextAttributes.DIM}>agents</Text>
