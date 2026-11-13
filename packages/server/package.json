@@ -11,21 +11,21 @@
         "typecheck": "tsc --noEmit"
     },
     "dependencies": {
-        "@ai-sdk/anthropic": "^4.0.71",
-        "@ai-sdk/google": "^4.0.92",
-        "@ai-sdk/openai": "^4.0.83",
+        "@ai-sdk/anthropic": "^4.0.99",
+        "@ai-sdk/google": "^4.0.114",
+        "@ai-sdk/openai": "^4.0.111",
         "@ai-sdk/provider-utils": "^5.0.59",
-        "@clerk/backend": "^3.26.1",
+        "@clerk/backend": "^3.27.0",
         "@hono/zod-validator": "^0.9.1",
         "@nicecode/database": "workspace:*",
         "@nicecode/shared": "workspace:*",
         "@polar-sh/sdk": "^1.0.2",
-        "@sentry/bun": "^11.4.0",
-        "@sentry/hono": "^11.4.0",
-        "@types/bun": "^1.4.3",
+        "@sentry/bun": "^11.11.0",
+        "@sentry/hono": "^11.11.0",
+        "@types/bun": "^1.4.4",
         "ai": "^7.0.127",
-        "dotenv": "^18.0.5",
-        "hono": "^4.13.9",
+        "dotenv": "^18.0.10",
+        "hono": "^4.13.17",
         "zod": "^4.6.5"
     }
 }
